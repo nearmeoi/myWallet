@@ -1,0 +1,291 @@
+:root {
+  /* Font */
+  --font-main: 'Outfit', sans-serif;
+
+  /* Neo-Brutalist Colors */
+  --bg-color: #FAFAFA;
+  /* Very light subtle grey/white */
+  --card-bg: #FFFFFF;
+  --text-primary: #1A1D1E;
+  --text-secondary: #000000;
+  /* Darker secondary for high contrast */
+
+  /* Accents - Pastel Pop */
+  --accent-purple: #E0CCF8;
+  --accent-blue: #BBEFFA;
+  --accent-green: #D4F7E6;
+  --accent-pink: #F8D4E3;
+  --accent-yellow: #FEF9C3;
+
+  /* Text Highlights */
+  --highlight-cyan: #BBEFFA;
+  --highlight-yellow: #FEF08A;
+
+  /* Functional */
+  --success-bg: #D4F7E6;
+  --success-text: #1A1D1E;
+  --danger-bg: #FFC0C0;
+  --danger-text: #1A1D1E;
+
+  /* Borders & Shadows - The Core Identity */
+  --border-width: 2px;
+  --border-color: #1A1D1E;
+  --border-radius: 12px;
+
+  --shadow-hard: 4px 4px 0px 0px #1A1D1E;
+  --shadow-hover: 2px 2px 0px 0px #1A1D1E;
+  --shadow-active: 0px 0px 0px 0px #1A1D1E;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  min-height: 100vh;
+  /* Dotted background pattern */
+  background-image: radial-gradient(#1A1D1E 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+#root {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 20px;
+  padding-bottom: 100px;
+  /* Space for fixed bottom nav */
+  position: relative;
+  background: var(--bg-color);
+  border-left: var(--border-width) solid var(--border-color);
+  border-right: var(--border-width) solid var(--border-color);
+  min-height: 100vh;
+}
+
+/* Animations */
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+/* Components */
+.card {
+  background: var(--card-bg);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-hard);
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: all 0.1s ease;
+}
+
+.card:active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Typography highlights */
+.highlight-text {
+  position: relative;
+  z-index: 1;
+}
+
+.highlight-text::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: -2px;
+  right: -2px;
+  height: 40%;
+  background: var(--highlight-cyan);
+  z-index: -1;
+  transform: rotate(-1deg);
+}
+
+/* Form Elements */
+input {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--border-radius);
+  border: var(--border-width) solid var(--border-color);
+  font-family: var(--font-main);
+  background: #FFFFFF;
+  margin-bottom: 12px;
+  font-weight: 500;
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+}
+
+input:focus {
+  outline: none;
+  box-shadow: var(--shadow-hard);
+  transform: translate(-1px, -1px);
+}
+
+/* Toast */
+.toast-container {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 90%;
+  max-width: 400px;
+  pointer-events: none;
+}
+
+.toast {
+  background: #FFFFFF;
+  padding: 12px 16px;
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-hard);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  pointer-events: auto;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(26, 29, 30, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  /* Bottom sheet on mobile */
+  justify-content: center;
+}
+
+@media (min-width: 480px) {
+  .modal-overlay {
+    align-items: center;
+  }
+}
+
+.modal-content {
+  background: var(--card-bg);
+  width: 100%;
+  max-width: 480px;
+  border-top: var(--border-width) solid var(--border-color);
+  border-left: var(--border-width) solid var(--border-color);
+  border-right: var(--border-width) solid var(--border-color);
+  border-radius: 24px 24px 0 0;
+  padding: 24px;
+  padding-bottom: max(32px, env(safe-area-inset-bottom));
+  animation: slideUp 0.3s ease-out;
+  box-shadow: 0 -4px 0 rgba(0, 0, 0, 0.1);
+}
+
+@media (min-width: 480px) {
+  .modal-content {
+    border-bottom: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius);
+    margin: 20px;
+    box-shadow: var(--shadow-hard);
+  }
+}
+
+/* Fixed Bottom Nav */
+/* Fixed Bottom Nav - Refined */
+.bottom-nav {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 40px);
+  max-width: 440px;
+  background: #FFFFFF;
+  border: var(--border-width) solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: var(--shadow-hard);
+
+  display: flex;
+  justify-content: space-between;
+  /* Spaced evenly including the middle button */
+  align-items: center;
+  padding: 8px 16px;
+  z-index: 100;
+}
+
+.bottom-nav button {
+  background: none;
+  border: none;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: #1A1D1E;
+  transition: all 0.2s;
+  opacity: 0.4;
+}
+
+.bottom-nav button.active {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+.bottom-nav button.active svg {
+  stroke-width: 2.5px;
+  filter: drop-shadow(2px 2px 0px rgba(187, 239, 250, 1));
+}
+
+/* Middle Add Button - Integrated */
+.bottom-nav-add {
+  background: #1A1D1E !important;
+  color: #FFFFFF !important;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1 !important;
+  border: 2px solid #1A1D1E !important;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.2) !important;
+  margin: 0 8px;
+}
+
+.bottom-nav-add:active {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 0px 0px 0px #000 !important;
+}
