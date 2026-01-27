@@ -37,7 +37,9 @@ const TransactionCard = ({ transaction, category, onDelete, onEdit }) => {
                 }}>
                     {title}
                 </h4>
-                <p style={{ fontSize: '12px', fontWeight: '600', color: '#666' }}>{date}</p>
+                <p style={{ fontSize: '12px', fontWeight: '600', color: '#666' }}>
+                    {date} {transaction.walletName ? `• ${transaction.walletName}` : ''}
+                </p>
             </div>
 
             {/* Amount */}

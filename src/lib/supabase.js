@@ -6,8 +6,8 @@ const supabaseAnonKey = 'sb_publishable_Y9E9LyR2cYzLJPtAgD4Qhg_L74fnUHX';
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Auth helpers
-export const signUp = async (email, password) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+export const signUp = async (email, password, options = {}) => {
+    const { data, error } = await supabase.auth.signUp({ email, password, options });
     return { data, error };
 };
 
@@ -19,6 +19,15 @@ export const signIn = async (email, password) => {
 export const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     return { error };
+};
+
+export const resendConfirmation = async (email, options = {}) => {
+    const { data, error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options
+    });
+    return { data, error };
 };
 
 export const getUser = () => supabase.auth.getUser();
@@ -38,6 +47,7 @@ export const syncTransactions = async (userId, transactions) => {
             amount: t.amount,
             type: t.type,
             category: t.category,
+            wallet_id: t.walletId || null, // Add wallet support
             created_at: t.timestamp
         }));
         return supabase.from('transactions').insert(toInsert);
@@ -60,7 +70,44 @@ export const fetchTransactions = async (userId) => {
                 amount: parseFloat(t.amount),
                 type: t.type,
                 category: t.category,
+                walletId: t.wallet_id, // Add wallet support
                 timestamp: t.created_at
+            })),
+            error
+        };
+    }
+    return { data: [], error };
+};
+
+export const syncWallets = async (userId, wallets) => {
+    await supabase.from('wallets').delete().eq('user_id', userId);
+    if (wallets.length > 0) {
+        const toInsert = wallets.map(w => ({
+            user_id: userId,
+            name: w.name,
+            type: w.type,
+            balance: w.balance,
+            color: w.color
+        }));
+        return supabase.from('wallets').insert(toInsert);
+    }
+    return { error: null };
+};
+
+export const fetchWallets = async (userId) => {
+    const { data, error } = await supabase
+        .from('wallets')
+        .select('*')
+        .eq('user_id', userId);
+
+    if (data && data.length > 0) {
+        return {
+            data: data.map(w => ({
+                id: w.id,
+                name: w.name,
+                type: w.type,
+                balance: parseFloat(w.balance),
+                color: w.color
             })),
             error
         };
@@ -142,12 +189,10 @@ export const fetchWishlist = async (userId) => {
 };
 
 export const syncBudget = async (userId, budget) => {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
-    if (data) {
-        return supabase.from('profiles').update({ monthly_budget: budget }).eq('id', userId);
-    } else {
-        return supabase.from('profiles').insert({ id: userId, monthly_budget: budget });
-    }
+    return supabase.from('profiles').upsert(
+        { id: userId, monthly_budget: budget },
+        { onConflict: 'id' }
+    );
 };
 
 export const fetchBudget = async (userId) => {

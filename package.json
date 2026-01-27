@@ -13,6 +13,7 @@
     "@fontsource/outfit": "^5.2.8",
     "@supabase/supabase-js": "^2.93.1",
     "lucide-react": "^0.563.0",
+    "pg": "^8.17.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
