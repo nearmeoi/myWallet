@@ -1,6 +1,7 @@
-import React from 'react';
-import { User, LogOut, LoaderCircle, Cloud, Tag, ChevronRight, Briefcase, CreditCard, Smartphone, Edit3, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { User, LogOut, LoaderCircle, Cloud, Tag, ChevronRight, Banknote, CreditCard, Smartphone, Edit3, Trash2, Save } from 'lucide-react';
 import { formatRupiah } from '../../lib/utils';
+import { useAuth } from '../../context/AuthContext';
 
 const AccountTab = ({ 
   user, 
@@ -23,8 +24,31 @@ const AccountTab = ({
   onSync, 
   onOpenModal, 
   onTabChange, 
-  onDelete 
+  onDelete,
+  addToast
 }) => {
+  const { updateProfile } = useAuth();
+  const [profileName, setProfileName] = useState(user?.user_metadata?.username || '');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    if (!profileName.trim()) return;
+    
+    setIsUpdating(true);
+    try {
+      const { error } = await updateProfile({ username: profileName });
+      if (error) throw error;
+      addToast('Profil diperbarui!');
+      setShowProfileEdit(false);
+    } catch (err) {
+      addToast('Gagal memperbarui profil: ' + err.message, 'error');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   return (
     <>
       <h2 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '20px' }}>Akun.</h2>
@@ -56,7 +80,7 @@ const AccountTab = ({
               <input type="password" value={authPassword} onChange={e => onSetAuthPassword(e.target.value)} placeholder="••••••••" />
             </div>
 
-            <button type="submit" disabled={isSubmitting} style={{
+            <button type="submit" disabled={isSubmitting} className="btn-pressed-blue" style={{
               width: '100%', padding: '14px', background: '#1A1D1E', color: '#fff',
               border: '2px solid #1A1D1E', borderRadius: '12px', fontWeight: '700',
               boxShadow: '4px 4px 0px rgba(0,0,0,0.2)', marginBottom: '12px',
@@ -102,14 +126,14 @@ const AccountTab = ({
       ) : (
         <div className="card" style={{ padding: '32px', textAlign: 'center' }}>
           <div style={{ width: '80px', height: '80px', margin: '0 auto 16px', background: '#D4F7E6', border: '2px solid #1A1D1E', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: '32px', fontWeight: '800' }}>{user.email[0].toUpperCase()}</span>
+            <span style={{ fontSize: '32px', fontWeight: '800' }}>{profileName ? profileName[0].toUpperCase() : user.email[0].toUpperCase()}</span>
           </div>
           <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '4px' }}>{user.email}</h3>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: '#666', fontSize: '13px', marginBottom: '24px' }}>
             <Cloud size={14} /> Data tersinkronisasi
           </div>
 
-          <button onClick={onLogout} style={{
+          <button onClick={onLogout} className="btn-pressed-blue" style={{
             width: '100%', padding: '14px', background: '#FFC0C0', color: '#1A1D1E',
             border: '2px solid #1A1D1E', borderRadius: '12px', fontWeight: '700',
             boxShadow: '4px 4px 0px #1A1D1E', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
@@ -122,7 +146,7 @@ const AccountTab = ({
       <div style={{ marginTop: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <h3 style={{ fontSize: '16px', fontWeight: '700' }}>Dompet Saya</h3>
-          <button onClick={() => onOpenModal('wallet')} style={{
+          <button onClick={() => onOpenModal('wallet')} className="btn-pressed-blue" style={{
             padding: '6px 12px', background: '#BBEFFA', border: '2px solid #1A1D1E',
             borderRadius: '8px', fontSize: '12px', fontWeight: '700', boxShadow: '2px 2px 0px #1A1D1E'
           }}>
@@ -143,7 +167,7 @@ const AccountTab = ({
                   background: w.type === 'cash' ? '#D4F7E6' : w.type === 'bank' ? '#FEF9C3' : '#E0CCF8',
                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
-                  {w.type === 'cash' ? <Briefcase size={20} /> : w.type === 'bank' ? <CreditCard size={20} /> : <Smartphone size={20} />}
+                  {w.type === 'cash' ? <Banknote size={20} /> : w.type === 'bank' ? <CreditCard size={20} /> : <Smartphone size={20} />}
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontWeight: '700', fontSize: '14px' }}>{w.name}</p>
@@ -166,9 +190,56 @@ const AccountTab = ({
             <ChevronRight size={20} color="#999" />
           </div>
           {user && (
-            <div onClick={onSync} style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+            <div onClick={onSync} style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', borderBottom: '2px solid #1A1D1E' }}>
               {syncing ? <LoaderCircle size={20} className="animate-spin" /> : <Cloud size={20} />}
               <span style={{ flex: 1, fontWeight: '600' }}>{syncing ? 'Syncing...' : 'Sync Sekarang'}</span>
+            </div>
+          )}
+          {user && (
+            <div style={{ borderBottom: '2px solid #1A1D1E' }}>
+              <div onClick={() => setShowProfileEdit(!showProfileEdit)} style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                <Edit3 size={20} />
+                <span style={{ flex: 1, fontWeight: '600' }}>Setting Profil</span>
+                <ChevronRight size={20} color="#999" style={{ transform: showProfileEdit ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+              </div>
+              
+              {showProfileEdit && (
+                <div style={{ padding: '0 16px 16px' }}>
+                  <form onSubmit={handleUpdateProfile}>
+                    <div style={{ marginBottom: '12px' }}>
+                      <label style={{ fontSize: '12px', fontWeight: '700', marginBottom: '4px', display: 'block' }}>NAMA PROFILE</label>
+                      <input 
+                        type="text" 
+                        value={profileName} 
+                        onChange={e => setProfileName(e.target.value)} 
+                        placeholder="Masukkan nama Anda" 
+                        style={{ marginBottom: '8px' }}
+                      />
+                    </div>
+                    <button type="submit" disabled={isUpdating} className="btn-pressed-blue" style={{
+                      width: '100%', padding: '12px', background: '#1A1D1E', color: '#fff',
+                      border: '2px solid #1A1D1E', borderRadius: '12px', fontWeight: '700',
+                      boxShadow: '4px 4px 0px rgba(0,0,0,0.2)',
+                      opacity: isUpdating ? 0.7 : 1, cursor: isUpdating ? 'not-allowed' : 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                    }}>
+                      {isUpdating ? <LoaderCircle size={18} className="animate-spin" /> : <Save size={18} />}
+                      Simpan Profil
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          )}
+          {user && (
+            <div onClick={() => {
+              if (window.confirm('Hapus data lokal yang error? Data server aman.')) {
+                localStorage.clear();
+                window.location.reload();
+              }
+            }} style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', color: '#EF4444' }}>
+              <Trash2 size={20} />
+              <span style={{ flex: 1, fontWeight: '600' }}>Reset Data Lokal</span>
             </div>
           )}
         </div>

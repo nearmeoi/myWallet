@@ -7,6 +7,8 @@ import '@fontsource/outfit/400.css';
 import '@fontsource/outfit/500.css';
 import '@fontsource/outfit/600.css';
 import '@fontsource/outfit/700.css';
+import { AuthProvider } from './context/AuthContext';
+import { WalletProvider } from './context/WalletContext';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -41,7 +43,11 @@ class ErrorBoundary extends React.Component {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <App />
+      <AuthProvider>
+        <WalletProvider>
+          <App />
+        </WalletProvider>
+      </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>,
 )

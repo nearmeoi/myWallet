@@ -1,7 +1,8 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = 'https://dgvjiiaunqaonvpwytej.supabase.co';
-const supabaseAnonKey = 'sb_publishable_Y9E9LyR2cYzLJPtAgD4Qhg_L74fnUHX';
+require('dotenv').config();
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 

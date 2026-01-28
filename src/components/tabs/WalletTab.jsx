@@ -1,17 +1,17 @@
 import React from 'react';
-import { Target, MoreHorizontal, Briefcase, CreditCard, Smartphone } from 'lucide-react';
+import { Target, MoreHorizontal, Banknote, CreditCard, Smartphone } from 'lucide-react';
 import { AVAILABLE_ICONS } from '../../lib/constants';
 import { formatRupiah } from '../../lib/utils';
 
-const WalletTab = ({ 
-  monthlyBudget, 
-  budgetProgress, 
-  totalIncome, 
-  totalExpense, 
-  wallets, 
-  expenseCategories, 
-  transactions, 
-  onOpenModal 
+const WalletTab = ({
+  monthlyBudget,
+  budgetProgress,
+  totalIncome,
+  totalExpense,
+  wallets,
+  expenseCategories,
+  transactions,
+  onOpenModal
 }) => {
   return (
     <>
@@ -58,12 +58,12 @@ const WalletTab = ({
            wallets.map(w => (
              <div key={w.id} style={{ padding: '16px', borderBottom: '2px solid #1A1D1E', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ 
-                    width: '32px', height: '32px', border: '2px solid #1A1D1E', borderRadius: '8px', 
+                  <div style={{
+                    width: '32px', height: '32px', border: '2px solid #1A1D1E', borderRadius: '8px',
                     background: w.type === 'cash' ? '#D4F7E6' : w.type === 'bank' ? '#FEF9C3' : '#E0CCF8',
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
-                    {w.type === 'cash' ? <Briefcase size={16} /> : w.type === 'bank' ? <CreditCard size={16} /> : <Smartphone size={16} />}
+                    {w.type === 'cash' ? <Banknote size={16} /> : w.type === 'bank' ? <CreditCard size={16} /> : <Smartphone size={16} />}
                   </div>
                   <span style={{ fontWeight: '600', fontSize: '14px' }}>{w.name}</span>
                </div>
@@ -72,7 +72,6 @@ const WalletTab = ({
            ))
          )}
       </div>
-
       <h3 style={{ marginTop: '24px', marginBottom: '16px', fontWeight: '800' }}>Pengeluaran per Kategori.</h3>
       {totalExpense === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '32px', borderStyle: 'dashed', background: 'transparent', boxShadow: 'none' }}>

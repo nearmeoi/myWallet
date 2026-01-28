@@ -1,13 +1,15 @@
 import React from 'react';
-import { Trash2, Edit3 } from 'lucide-react';
+import { Trash2, Edit3, ArrowLeftRight } from 'lucide-react';
 
 const TransactionCard = ({ transaction, category, onDelete, onEdit }) => {
     const { title, amount, type, date } = transaction;
     const isIncome = type === 'income';
+    const isTransfer = transaction.category === 'transfer';
 
     // Check if category is valid, otherwise fallback
     const validCategory = category || { label: 'Lainnya', color: '#1A1D1E', bg: '#F3F4F6' };
-    const IconComponent = validCategory.icon;
+    const IconComponent = isTransfer ? ArrowLeftRight : validCategory.icon;
+    const iconBg = isTransfer ? '#E0CCF8' : validCategory.bg;
 
     return (
         <div className="card" style={{
@@ -22,7 +24,7 @@ const TransactionCard = ({ transaction, category, onDelete, onEdit }) => {
             <div style={{
                 width: '48px', height: '48px',
                 border: '2px solid #1A1D1E', borderRadius: '8px',
-                background: validCategory.bg,
+                background: iconBg,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0
             }}>

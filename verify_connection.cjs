@@ -1,7 +1,9 @@
 const { Client } = require('pg');
 
-const projectRef = 'dgvjiiaunqaonvpwytej';
-const password = 'Akmaljhi123';
+require('dotenv').config();
+// Extract from DATABASE_URL or set separate env var if needed
+const connectionString = process.env.DATABASE_URL;
+const projectRef = process.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0];
 
 const variations = [
     `postgresql://postgres:${password}@db.${projectRef}.supabase.co:5432/postgres`,
