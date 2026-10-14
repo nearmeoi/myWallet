@@ -27,7 +27,7 @@ const AccountTab = ({
   onDelete,
   addToast
 }) => {
-  const { updateProfile } = useAuth();
+  const { updateProfile, isSupabaseConfigured } = useAuth();
   const [profileName, setProfileName] = useState(user?.user_metadata?.username || '');
   const [isUpdating, setIsUpdating] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
@@ -55,6 +55,27 @@ const AccountTab = ({
 
       {!user ? (
         <div className="card" style={{ padding: '32px' }}>
+          {!isSupabaseConfigured && (
+            <div style={{
+              padding: '14px',
+              background: '#FEF9C3',
+              border: '2px solid #1A1D1E',
+              borderRadius: '12px',
+              boxShadow: '3px 3px 0px #1A1D1E',
+              marginBottom: '20px',
+              fontSize: '13px',
+              textAlign: 'left'
+            }}>
+              <p style={{ fontWeight: '800', marginBottom: '4px' }}>Mode Lokal (Offline)</p>
+              <p style={{ color: '#444', lineHeight: 1.4, margin: '0 0 6px 0' }}>
+                Aplikasi saat ini berjalan menggunakan <strong>LocalStorage</strong> di browser. Semua data transaksi, dompet, dan kategori tersimpan aman di perangkat ini.
+              </p>
+              <p style={{ color: '#666', fontSize: '11px', margin: 0 }}>
+                Untuk mengaktifkan sinkronisasi akun online antar perangkat, masukkan <code>VITE_SUPABASE_URL</code> dan <code>VITE_SUPABASE_ANON_KEY</code> di file <code>.env</code>.
+              </p>
+            </div>
+          )}
+
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <div style={{ width: '80px', height: '80px', margin: '0 auto 16px', background: '#FEF08A', border: '2px solid #1A1D1E', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <User size={40} />

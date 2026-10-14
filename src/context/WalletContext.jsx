@@ -5,7 +5,8 @@ import {
   fetchCategories, createCategory, updateCategory as apiUpdateCategory, deleteCategory as apiDeleteCategory,
   fetchWishlist, createWishlist, updateWishlist as apiUpdateWishlist, deleteWishlist as apiDeleteWishlist,
   fetchBudget, syncBudget,
-  fetchWallets, createWallet, updateWallet as apiUpdateWallet, deleteWallet as apiDeleteWallet
+  fetchWallets, createWallet, updateWallet as apiUpdateWallet, deleteWallet as apiDeleteWallet,
+  isSupabaseConfigured
 } from '../lib/supabase';
 import { DEFAULT_CATEGORIES } from '../lib/constants';
 
@@ -28,19 +29,23 @@ export function WalletProvider({ children }) {
     return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
   });
 
-  const [syncing, setSyncing] = useState(false); // Used for initial load
+  const [syncing, setSyncing] = useState(false);
 
   // Computed Values
   const netCashFlow = transactions.reduce((acc, curr) => curr.type === 'income' ? acc + parseFloat(curr.amount || 0) : acc - parseFloat(curr.amount || 0), 0);
   const totalWalletBalance = wallets.reduce((acc, w) => acc + (parseFloat(w.balance) || 0), 0);
   const displayBalance = wallets.length > 0 ? totalWalletBalance : netCashFlow;
 
-  const totalExpense = transactions.filter(t => t.type === 'expense').reduce((a, b) => a + parseFloat(b.amount || 0), 0);
-  const totalIncome = transactions.filter(t => t.type === 'income').reduce((a, b) => a + parseFloat(b.amount || 0), 0);
+  const totalExpense = transactions
+    .filter(t => t.type === 'expense' && t.category !== 'transfer')
+    .reduce((a, b) => a + parseFloat(b.amount || 0), 0);
+  const totalIncome = transactions
+    .filter(t => t.type === 'income' && t.category !== 'transfer')
+    .reduce((a, b) => a + parseFloat(b.amount || 0), 0);
 
-  // Load Data from Cloud
+  // Load Data from Cloud (manual trigger)
   const loadCloudData = useCallback(async () => {
-    if (!user) return;
+    if (!user || !isSupabaseConfigured) return;
     setSyncing(true);
     try {
       const [txRes, catRes, wishRes, budgetRes, walletRes] = await Promise.all([
@@ -63,16 +68,42 @@ export function WalletProvider({ children }) {
       if (walletRes.data) setWallets(walletRes.data);
     } catch (err) {
       console.error('CRITICAL LOAD ERROR:', err);
+    } finally {
+      setSyncing(false);
     }
-    setSyncing(false);
   }, [user]);
 
-  // Initial Load
+  // Initial Load when logged in with Supabase
   useEffect(() => {
-    if (user) {
-      loadCloudData();
+    let active = true;
+    if (user && isSupabaseConfigured) {
+      setSyncing(true);
+      Promise.all([
+        fetchTransactions(user.id),
+        fetchCategories(user.id),
+        fetchWishlist(user.id),
+        fetchBudget(user.id),
+        fetchWallets(user.id)
+      ])
+        .then(([txRes, catRes, wishRes, budgetRes, walletRes]) => {
+          if (!active) return;
+          if (txRes?.data) setTransactions(txRes.data);
+          if (catRes?.data && catRes.data.length > 0) setCategories(catRes.data);
+          if (wishRes?.data) setWishlist(wishRes.data);
+          if (budgetRes?.budget) setMonthlyBudget(budgetRes.budget);
+          if (walletRes?.data) setWallets(walletRes.data);
+        })
+        .catch(err => {
+          console.error('CRITICAL LOAD ERROR:', err);
+        })
+        .finally(() => {
+          if (active) setSyncing(false);
+        });
     }
-  }, [user, loadCloudData]);
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   // Local Persistence
   useEffect(() => localStorage.setItem('mywallet_transactions', JSON.stringify(transactions)), [transactions]);
@@ -81,9 +112,7 @@ export function WalletProvider({ children }) {
   useEffect(() => localStorage.setItem('mywallet_categories', JSON.stringify(categories)), [categories]);
   useEffect(() => localStorage.setItem('mywallet_wallets', JSON.stringify(wallets)), [wallets]);
 
-
   // Actions (Atomic CRUD)
-
   const addTransaction = (tx) => {
     const tempId = Date.now();
     const timestamp = new Date().toISOString();
@@ -109,7 +138,7 @@ export function WalletProvider({ children }) {
     }
 
     // 3. API Calls
-    if (user) {
+    if (user && isSupabaseConfigured) {
       createTransaction(user.id, newTx).then(({ data, error }) => {
         if (error) console.error("❌ CREATE TRANSACTION ERROR:", error);
         if (data) {
@@ -171,23 +200,18 @@ export function WalletProvider({ children }) {
 
     // 2. PREPARE UPDATED TRANSACTIONS
     const newAmount = updatedFields.amount !== undefined ? parseFloat(updatedFields.amount) : oldTx.amount;
-    const newTitle = updatedFields.title !== undefined ? updatedFields.title : oldTx.title;
     
     const updatedMainTx = { ...oldTx, ...updatedFields, amount: newAmount };
     let updatedTwinTx = null;
 
     if (twin) {
-      // If it's a transfer, the twin's amount and basic title structure should match
-      // Note: We don't change twin's walletId via normal edit UI yet, but we sync amount/title
       updatedTwinTx = { 
         ...twin, 
         amount: newAmount,
         title: twin.title.startsWith('Transfer dari') 
           ? `Transfer dari ${nextWallets.find(w => w.id.toString() === updatedMainTx.walletId?.toString())?.name || '?'}`
-          : twin.title // Simplification: keep twin title logic or sync it
+          : twin.title
       };
-      // Better: if main is "Transfer ke B", twin is "Transfer dari A". 
-      // If main title changes to "Beli Bakso", twin title stays "Transfer dari A" but amount syncs.
     }
 
     // 3. APPLY BOTH NEW EFFECTS
@@ -203,7 +227,7 @@ export function WalletProvider({ children }) {
     }));
 
     // 5. SYNC TO API
-    if (user) {
+    if (user && isSupabaseConfigured) {
       apiUpdateTransaction(id, { ...updatedFields, amount: newAmount });
       if (updatedTwinTx) {
         apiUpdateTransaction(updatedTwinTx.id, { amount: newAmount });
@@ -254,7 +278,7 @@ export function WalletProvider({ children }) {
     setTransactions(prev => prev.filter(t => !idsToDelete.includes(t.id.toString())));
 
     // 3. API Calls
-    if (user) {
+    if (user && isSupabaseConfigured) {
       idsToDelete.forEach(targetId => apiDeleteTransaction(targetId));
       affectedWalletIds.forEach(wid => {
         const w = nextWallets.find(wallet => wallet.id.toString() === wid);
@@ -268,7 +292,7 @@ export function WalletProvider({ children }) {
     const newWallet = { ...wallet, id: tempId, balance: parseFloat(wallet.balance || 0) };
     setWallets(prev => [...prev, newWallet]);
 
-    if (user) {
+    if (user && isSupabaseConfigured) {
       createWallet(user.id, newWallet).then(({ data }) => {
         if (data) {
           setWallets(prev => prev.map(w => w.id.toString() === tempId.toString() ? { ...w, id: data.id } : w));
@@ -280,7 +304,7 @@ export function WalletProvider({ children }) {
   const updateWallet = (id, updatedFields) => {
     if (updatedFields.balance !== undefined) updatedFields.balance = parseFloat(updatedFields.balance);
     setWallets(prev => prev.map(w => w.id.toString() === id.toString() ? { ...w, ...updatedFields } : w));
-    if (user) {
+    if (user && isSupabaseConfigured) {
       apiUpdateWallet(id, updatedFields);
     }
   };
@@ -290,12 +314,10 @@ export function WalletProvider({ children }) {
       const filtered = prev.filter(w => w.id.toString() !== id.toString());
       return filtered;
     });
-    if (user) {
+    if (user && isSupabaseConfigured) {
       apiDeleteWallet(id).then(({ error }) => {
         if (error) {
           console.error('Failed to delete wallet from DB:', error);
-          // If DB delete fails, we might want to refresh from cloud to restore consistency
-          // but for now let's just log it.
         }
       });
     }
@@ -306,21 +328,21 @@ export function WalletProvider({ children }) {
     const newCat = { ...category, id: tempId, isDefault: false };
     setCategories(prev => [...prev, newCat]);
 
-    if (user) {
+    if (user && isSupabaseConfigured) {
       createCategory(user.id, newCat);
     }
   };
 
   const updateCategory = (id, updatedFields) => {
     setCategories(prev => prev.map(c => c.id.toString() === id.toString() ? { ...c, ...updatedFields } : c));
-    if (user) {
+    if (user && isSupabaseConfigured) {
       apiUpdateCategory(id, { ...updatedFields, userId: user.id });
     }
   };
 
   const deleteCategory = (id) => {
     setCategories(prev => prev.filter(c => c.id.toString() !== id.toString()));
-    if (user) {
+    if (user && isSupabaseConfigured) {
       apiDeleteCategory(id);
     }
   };
@@ -330,7 +352,7 @@ export function WalletProvider({ children }) {
     const newItem = { ...item, id: tempId, purchased: false };
     setWishlist(prev => [...prev, newItem]);
 
-    if (user) {
+    if (user && isSupabaseConfigured) {
       createWishlist(user.id, newItem).then(({ data }) => {
         if (data) {
           setWishlist(prev => prev.map(i => i.id.toString() === tempId.toString() ? { ...i, id: data.id } : i));
@@ -341,21 +363,21 @@ export function WalletProvider({ children }) {
 
   const updateWishlistItem = (id, updatedFields) => {
     setWishlist(prev => prev.map(i => i.id.toString() === id.toString() ? { ...i, ...updatedFields } : i));
-    if (user) {
+    if (user && isSupabaseConfigured) {
       apiUpdateWishlist(id, updatedFields);
     }
   };
 
   const deleteWishlistItem = (id) => {
     setWishlist(prev => prev.filter(i => i.id.toString() !== id.toString()));
-    if (user) {
+    if (user && isSupabaseConfigured) {
       apiDeleteWishlist(id);
     }
   };
 
   const updateBudget = (amount) => {
     setMonthlyBudget(amount);
-    if (user) {
+    if (user && isSupabaseConfigured) {
       syncBudget(user.id, amount);
     }
   };
@@ -406,7 +428,7 @@ export function WalletProvider({ children }) {
     }));
 
     // 4. API Calls
-    if (user) {
+    if (user && isSupabaseConfigured) {
       try {
         const results = await Promise.all([
           createTransaction(user.id, txOut),
@@ -435,7 +457,7 @@ export function WalletProvider({ children }) {
     displayBalance,
     totalExpense,
     totalIncome,
-    syncToCloud: loadCloudData, // Alias for manual refresh if needed
+    syncToCloud: loadCloudData,
     
     addTransaction,
     updateTransaction,

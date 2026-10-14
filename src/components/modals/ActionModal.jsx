@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Tag, Banknote, CreditCard, Smartphone } from 'lucide-react';
 import { useWallet } from '../../context/WalletContext';
 import { AVAILABLE_ICONS, PRESET_COLORS } from '../../lib/constants';
@@ -17,83 +17,61 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
 
   // Internal Mode State to allow switching
   const [currentMode, setCurrentMode] = useState(initialMode);
-  const [currentType, setCurrentType] = useState(initialType);
+  const currentType = initialType;
 
   // Form State
-  const [formTitle, setFormTitle] = useState('');
-  const [formAmount, setFormAmount] = useState('');
-  const [formCategory, setFormCategory] = useState('');
-  const [formWallet, setFormWallet] = useState('');
-  const [toWallet, setToWallet] = useState('');
+  const [formTitle, setFormTitle] = useState(() => {
+    return editingItem ? (editingItem.title || editingItem.name || '') : '';
+  });
+  const [formAmount, setFormAmount] = useState(() => {
+    if (initialMode === 'budget') return monthlyBudget ? formatNumberInput(monthlyBudget) : '';
+    if (editingItem) return formatNumberInput(editingItem.amount || editingItem.price || '');
+    return '';
+  });
+  const [formCategory, setFormCategory] = useState(() => {
+    if (editingItem?.category) return editingItem.category;
+    const defaultCat = categories.find(c => c.type === initialType);
+    return defaultCat?.id || '';
+  });
+  const [formWallet, setFormWallet] = useState(() => {
+    if (editingItem?.walletId) return editingItem.walletId;
+    return wallets.length > 0 ? wallets[0].id : '';
+  });
+  const [toWallet, setToWallet] = useState(() => {
+    return wallets.length > 1 ? wallets[1].id : '';
+  });
 
   // Category Form State
-  const [catName, setCatName] = useState('');
-  const [catIcon, setCatIcon] = useState('Tag');
-  const [catColor, setCatColor] = useState('#E0CCF8');
-  const [catType, setCatType] = useState('expense');
-  const [catBudget, setCatBudget] = useState('');
+  const [catName, setCatName] = useState(() => {
+    return initialMode === 'category' && editingItem ? editingItem.name : '';
+  });
+  const [catIcon, setCatIcon] = useState(() => {
+    return initialMode === 'category' && editingItem ? editingItem.icon : 'Tag';
+  });
+  const [catColor, setCatColor] = useState(() => {
+    return initialMode === 'category' && editingItem ? editingItem.bg : '#E0CCF8';
+  });
+  const [catType, setCatType] = useState(() => {
+    return initialMode === 'category' && editingItem ? editingItem.type : (initialType || 'expense');
+  });
+  const [catBudget, setCatBudget] = useState(() => {
+    return initialMode === 'category' && editingItem?.budgetLimit ? formatNumberInput(editingItem.budgetLimit) : '';
+  });
 
   // Wallet Form State
-  const [walletName, setWalletName] = useState('');
-  const [walletBalance, setWalletBalance] = useState('');
-  const [walletType, setWalletType] = useState('cash');
+  const [walletName, setWalletName] = useState(() => {
+    return initialMode === 'wallet' && editingItem ? editingItem.name : '';
+  });
+  const [walletBalance, setWalletBalance] = useState(() => {
+    return initialMode === 'wallet' && editingItem ? formatNumberInput(editingItem.balance) : '';
+  });
+  const [walletType, setWalletType] = useState(() => {
+    return initialMode === 'wallet' && editingItem ? editingItem.type : 'cash';
+  });
 
   // Computed
   const incomeCategories = categories.filter(c => c.type === 'income');
   const expenseCategories = categories.filter(c => c.type === 'expense');
-
-  // Sync internal mode with props
-  useEffect(() => {
-    setCurrentMode(initialMode);
-    setCurrentType(initialType);
-  }, [initialMode, initialType, isOpen]);
-
-  // Initialize Form Data
-  useEffect(() => {
-    if (!isOpen) return;
-
-    if (currentMode === 'category') {
-      if (editingItem) {
-        setCatName(editingItem.name);
-        setCatIcon(editingItem.icon);
-        setCatColor(editingItem.bg);
-        setCatType(editingItem.type);
-        setCatBudget(editingItem.budgetLimit ? formatNumberInput(editingItem.budgetLimit) : '');
-      } else {
-        setCatName('');
-        setCatIcon('Tag');
-        setCatColor('#E0CCF8');
-        setCatType(currentType);
-        setCatBudget('');
-      }
-    } else if (currentMode === 'wallet') {
-      if (editingItem) {
-        setWalletName(editingItem.name);
-        setWalletBalance(formatNumberInput(editingItem.balance));
-        setWalletType(editingItem.type);
-      } else {
-        setWalletName('');
-        setWalletBalance('');
-        setWalletType('cash');
-      }
-    } else if (currentMode === 'transfer') {
-      setFormAmount('');
-      setFormTitle('');
-      setFormWallet(wallets.length > 0 ? wallets[0].id : '');
-      setToWallet(wallets.length > 1 ? wallets[1].id : '');
-    } else if (editingItem) {
-      setFormTitle(editingItem.title || editingItem.name);
-      setFormAmount(formatNumberInput(editingItem.amount || editingItem.price));
-      setFormCategory(editingItem.category || '');
-      setFormWallet(editingItem.walletId || '');
-    } else {
-      setFormTitle('');
-      setFormAmount(currentMode === 'budget' ? (monthlyBudget ? formatNumberInput(monthlyBudget) : '') : '');
-      const defaultCat = categories.find(c => c.type === currentType);
-      setFormCategory(defaultCat?.id || '');
-      setFormWallet(wallets.length > 0 ? wallets[0].id : '');
-    }
-  }, [isOpen, currentMode, currentType, editingItem, monthlyBudget, categories, wallets]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -211,7 +189,7 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
             {currentMode === 'category' && (editingItem ? 'Edit Kategori' : 'Kategori Baru')}
             {currentMode === 'wallet' && (editingItem ? 'Edit Dompet' : 'Dompet Baru')}
           </h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none' }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
             <X size={24} />
           </button>
         </div>
@@ -406,6 +384,8 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
                         onClick={() => {
                           setCurrentMode('category');
                           setCatType(currentType);
+                          setCatName('');
+                          setCatBudget('');
                         }}
                         style={{ 
                           width: '36px', height: '36px', background: '#FFFFFF', border: '2px solid #1A1D1E', 
@@ -422,13 +402,13 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
             </>
           )}
 
-            <button type="submit" className="btn-pressed-blue" style={{
-              width: '100%', padding: '16px', background: '#1A1D1E', color: '#fff',
-              border: '2px solid #1A1D1E', borderRadius: '12px', fontWeight: '700',
-              boxShadow: '4px 4px 0px rgba(0,0,0,0.2)', marginTop: '8px'
-            }}>
-              Simpan {currentMode === 'transaction' ? 'Transaksi' : currentMode === 'transfer' ? 'Transfer' : currentMode === 'wishlist' ? 'Wishlist' : 'Dompet'}
-            </button>
+          <button type="submit" className="btn-pressed-blue" style={{
+            width: '100%', padding: '16px', background: '#1A1D1E', color: '#fff',
+            border: '2px solid #1A1D1E', borderRadius: '12px', fontWeight: '700',
+            boxShadow: '4px 4px 0px rgba(0,0,0,0.2)', marginTop: '8px'
+          }}>
+            Simpan {currentMode === 'transaction' ? 'Transaksi' : currentMode === 'transfer' ? 'Transfer' : currentMode === 'wishlist' ? 'Wishlist' : 'Dompet'}
+          </button>
         </form>
       </div>
     </div>

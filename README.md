@@ -1,16 +1,70 @@
-# React + Vite
+# myWallet 💰
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplikasi manajemen keuangan pribadi yang responsif, modern, dan fleksibel berbasis **React 19**, **Vite**, dan **Supabase**.
 
-Currently, two official plugins are available:
+Aplikasi ini dapat berjalan dalam dua mode:
+1. **Mode Lokal (Offline)**: Berjalan langsung tanpa backend/database eksternal, data disimpan secara lokal menggunakan `LocalStorage` browser.
+2. **Mode Cloud (Supabase)**: Sinkronisasi data antar perangkat dan autentikasi akun menggunakan Supabase PostgreSQL.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## 🚀 Fitur Utama
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Dashboard Keuangan**: Pantau saldo total, pemasukan, pengeluaran, dan budget bulanan.
+- **Manajemen Dompet**: Kelola berbagai dompet/rekening (Tunai, Bank, E-Wallet) dan saldo masing-masing.
+- **Transfer Antar Dompet**: Catat pemindahan dana antar dompet tanpa merusak statistik pengeluaran.
+- **Kategori Fleksibel**: Kategori pemasukan dan pengeluaran kustom dengan batas jatah anggaran per kategori.
+- **Wishlist & Target Belanja**: Daftar barang impian yang ingin dibeli beserta kalkulasi sisa dana.
+- **Filter Riwayat Transaksi**: Cari transaksi berdasarkan kata kunci, bulan, tahun, tipe, atau dompet tertentu.
+- **Mode Tamu & Akun Cloud**: Langsung pakai tanpa login, atau daftar akun untuk sinkronisasi cloud.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠️ Cara Menjalankan
+
+### 1. Install Dependensi
+```bash
+npm install
+```
+
+### 2. Jalankan Mode Pengembang (Development)
+```bash
+npm run dev
+```
+Buka browser di `http://localhost:5173`. Aplikasi langsung siap digunakan dalam Mode Lokal!
+
+### 3. Build untuk Produksi
+```bash
+npm run build
+npm run preview
+```
+
+---
+
+## ☁️ Menghubungkan ke Supabase (Opsional)
+
+Jika ingin mengaktifkan login akun dan sinkronisasi cloud antar perangkat:
+
+1. Buat proyek baru di [Supabase](https://supabase.com).
+2. Buka **SQL Editor** di dashboard Supabase, lalu jalankan script yang ada di file [`schema.sql`](./schema.sql).
+3. Salin file `.env.example` ke `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+4. Isi kredensial Supabase Anda di `.env`:
+   ```env
+   VITE_SUPABASE_URL=https://proyek-anda.supabase.co
+   VITE_SUPABASE_ANON_KEY=anon-key-anda
+   DATABASE_URL=postgresql://postgres:password-anda@db.proyek-anda.supabase.co:5432/postgres
+   ```
+5. Restart dev server: `npm run dev`. Menu Akun akan otomatis beralih ke mode sinkronisasi cloud!
+
+---
+
+## 📋 Skrip yang Tersedia
+
+- `npm run dev` : Menjalankan development server Vite.
+- `npm run build` : Membuat bundle produksi di folder `dist`.
+- `npm run preview` : Meninjau hasil build produksi secara lokal.
+- `npm run lint` : Menjalankan ESLint untuk memeriksa kualitas kode.
+- `npm run init-db` : Menjalankan migrasi database via `init_db.cjs` (memerlukan `DATABASE_URL`).

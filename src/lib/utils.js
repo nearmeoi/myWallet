@@ -10,7 +10,11 @@ export const formatDate = (dateInput) => {
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + `, ${date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
 };
 
-export const formatRupiah = (num) => 'Rp ' + Math.abs(num).toLocaleString('id-ID');
+export const formatRupiah = (num) => {
+  const n = parseFloat(num) || 0;
+  const prefix = n < 0 ? '-Rp ' : 'Rp ';
+  return prefix + Math.abs(n).toLocaleString('id-ID');
+};
 
 export const formatNumberInput = (num) => {
   if (num === '' || num === null || num === undefined) return '';

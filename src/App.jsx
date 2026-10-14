@@ -72,7 +72,7 @@ function App() {
   const currentMonthExpenses = transactions.filter(t => {
     const d = new Date(t.timestamp);
     const now = new Date();
-    return t.type === 'expense' && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    return t.type === 'expense' && t.category !== 'transfer' && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).reduce((a, b) => a + b.amount, 0);
   const budgetProgress = monthlyBudget > 0 ? (currentMonthExpenses / monthlyBudget) * 100 : 0;
   
@@ -281,17 +281,20 @@ function App() {
       />
 
       {/* Action Modal */}
-      <ActionModal 
-        isOpen={showModal}
-        onClose={() => {
-          setShowModal(false);
-          if (window.history.state?.modal) window.history.back();
-        }}
-        mode={modalMode}
-        type={modalType}
-        editingItem={editingItem}
-        addToast={addToast}
-      />
+      {showModal && (
+        <ActionModal 
+          key={`${modalMode}-${modalType}-${editingItem?.id || 'new'}`}
+          isOpen={showModal}
+          onClose={() => {
+            setShowModal(false);
+            if (window.history.state?.modal) window.history.back();
+          }}
+          mode={modalMode}
+          type={modalType}
+          editingItem={editingItem}
+          addToast={addToast}
+        />
+      )}
 
       {/* Delete Confirmation */}
       {confirmDelete && (

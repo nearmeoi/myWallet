@@ -5,7 +5,8 @@ import {
   signOut as supabaseSignOut, 
   onAuthStateChange,
   resendConfirmation as supabaseResend,
-  updateProfile as supabaseUpdateProfile
+  updateProfile as supabaseUpdateProfile,
+  isSupabaseConfigured
 } from '../lib/supabase';
 
 const AuthContext = createContext();
@@ -19,20 +20,42 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check active session on mount
-    const { data: { subscription } } = onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
-      setLoading(false);
-    });
+    let subscription = null;
+    try {
+      const res = onAuthStateChange((event, session) => {
+        setUser(session?.user || null);
+        setLoading(false);
+      });
+      subscription = res?.data?.subscription;
+    } catch (err) {
+      console.warn('Auth state change subscription error:', err);
+      setTimeout(() => setLoading(false), 0);
+    }
 
-    return () => subscription.unsubscribe();
+    return () => {
+      if (subscription?.unsubscribe) {
+        subscription.unsubscribe();
+      }
+    };
   }, []);
 
   const signIn = async (email, password) => {
+    if (!isSupabaseConfigured) {
+      return {
+        data: null,
+        error: new Error('Supabase belum dikonfigurasi. Atur VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY di file .env.')
+      };
+    }
     return supabaseSignIn(email, password);
   };
 
   const signUp = async (email, password) => {
+    if (!isSupabaseConfigured) {
+      return {
+        data: null,
+        error: new Error('Supabase belum dikonfigurasi. Atur VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY di file .env.')
+      };
+    }
     return supabaseSignUp(email, password, { emailRedirectTo: window.location.origin });
   };
 
@@ -42,10 +65,16 @@ export function AuthProvider({ children }) {
   };
 
   const resendConfirmation = async (email) => {
+    if (!isSupabaseConfigured) {
+      return { data: null, error: new Error('Supabase belum dikonfigurasi.') };
+    }
     return supabaseResend(email, { emailRedirectTo: window.location.origin });
   };
 
   const updateProfile = async (updates) => {
+    if (!isSupabaseConfigured) {
+      return { data: null, error: new Error('Supabase belum dikonfigurasi.') };
+    }
     const { data, error } = await supabaseUpdateProfile(updates);
     if (data?.user) setUser(data.user);
     return { data, error };
@@ -58,7 +87,8 @@ export function AuthProvider({ children }) {
     signUp,
     signOut,
     resendConfirmation,
-    updateProfile
+    updateProfile,
+    isSupabaseConfigured
   };
 
   return (
