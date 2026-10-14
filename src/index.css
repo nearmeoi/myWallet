@@ -37,20 +37,35 @@
   --shadow-active: 0px 0px 0px 0px #1A1D1E;
 }
 
-* {
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   font-family: var(--font-main);
   background-color: var(--bg-color);
   color: var(--text-primary);
+  -webkit-text-size-adjust: 100%;
   min-height: 100vh;
   /* Dotted background pattern */
   background-image: radial-gradient(#1A1D1E 1px, transparent 1px);
   background-size: 20px 20px;
+}
+
+a, a:link, a:visited, a:hover, a:active,
+a[href^="tel"], a[href^="mailto"], a[href^="sms"] {
+  color: inherit !important;
+  text-decoration: none !important;
+  -webkit-text-fill-color: inherit;
+}
+
+input, select, textarea, button {
+  font-family: var(--font-main);
+  color: var(--text-primary);
+  -webkit-text-fill-color: var(--text-primary);
 }
 
 #root {
@@ -112,6 +127,8 @@ body {
 .highlight-text {
   position: relative;
   z-index: 1;
+  color: var(--text-primary) !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
 }
 
 .highlight-text::after {
@@ -121,7 +138,7 @@ body {
   left: -2px;
   right: -2px;
   height: 40%;
-  background: var(--highlight-cyan);
+  background: var(--highlight-yellow);
   z-index: -1;
   transform: rotate(-1deg);
 }
@@ -134,10 +151,33 @@ input {
   border: var(--border-width) solid var(--border-color);
   font-family: var(--font-main);
   background: #FFFFFF;
+  color: #1A1D1E !important;
+  -webkit-text-fill-color: #1A1D1E !important;
   margin-bottom: 12px;
   font-weight: 500;
   box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 0.1);
   transition: all 0.2s;
+}
+
+input::placeholder {
+  color: #888888 !important;
+  -webkit-text-fill-color: #888888 !important;
+  opacity: 1;
+}
+
+select {
+  color: #1A1D1E !important;
+  -webkit-text-fill-color: #1A1D1E !important;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #1A1D1E !important;
+  -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
+  box-shadow: 0 0 0 1000px #FFFFFF inset !important;
+  color: #1A1D1E !important;
 }
 
 input:focus {

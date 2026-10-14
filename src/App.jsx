@@ -32,6 +32,7 @@ function App() {
   const [authMode, setAuthMode] = useState('login');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
+  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResend, setShowResend] = useState(false);
@@ -98,9 +99,24 @@ function App() {
     setAuthError('');
     setShowResend(false);
 
-    if (!authEmail || !authPassword) {
-      setAuthError('Email dan password harus diisi');
-      return;
+    if (authMode === 'register') {
+      if (!authEmail || !authPassword || !authConfirmPassword) {
+        setAuthError('Email, password, dan konfirmasi password harus diisi');
+        return;
+      }
+      if (authPassword.length < 6) {
+        setAuthError('Password minimal 6 karakter');
+        return;
+      }
+      if (authPassword !== authConfirmPassword) {
+        setAuthError('Password dan konfirmasi password tidak cocok');
+        return;
+      }
+    } else {
+      if (!authEmail || !authPassword) {
+        setAuthError('Email dan password harus diisi');
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -251,6 +267,7 @@ function App() {
             authMode={authMode}
             authEmail={authEmail}
             authPassword={authPassword}
+            authConfirmPassword={authConfirmPassword}
             authError={authError}
             isSubmitting={isSubmitting}
             showResend={showResend}
@@ -262,6 +279,7 @@ function App() {
             onSetAuthMode={setAuthMode}
             onSetAuthEmail={setAuthEmail}
             onSetAuthPassword={setAuthPassword}
+            onSetAuthConfirmPassword={setAuthConfirmPassword}
             onSetAuthError={setAuthError}
             onSetShowResend={setShowResend}
             onSync={syncToCloud}

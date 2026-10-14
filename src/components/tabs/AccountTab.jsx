@@ -8,6 +8,7 @@ const AccountTab = ({
   authMode, 
   authEmail, 
   authPassword, 
+  authConfirmPassword,
   authError, 
   isSubmitting, 
   showResend, 
@@ -19,6 +20,7 @@ const AccountTab = ({
   onSetAuthMode, 
   onSetAuthEmail, 
   onSetAuthPassword, 
+  onSetAuthConfirmPassword,
   onSetAuthError, 
   onSetShowResend, 
   onSync, 
@@ -77,11 +79,13 @@ const AccountTab = ({
           )}
 
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <div style={{ width: '80px', height: '80px', margin: '0 auto 16px', background: '#FEF08A', border: '2px solid #1A1D1E', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '80px', height: '80px', margin: '0 auto 16px', background: authMode === 'login' ? '#FEF08A' : '#D4F7E6', border: '2px solid #1A1D1E', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <User size={40} />
             </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '800' }}>{authMode === 'login' ? 'Login' : 'Daftar'}</h3>
-            <p style={{ fontSize: '14px', color: '#666' }}>Sinkronisasi data antar perangkat</p>
+            <h3 style={{ fontSize: '20px', fontWeight: '800' }}>{authMode === 'login' ? 'Login Akun' : 'Daftar Akun Baru'}</h3>
+            <p style={{ fontSize: '14px', color: '#666' }}>
+              {authMode === 'login' ? 'Masuk ke akun myWallet Anda' : 'Buat akun untuk sinkronisasi data antar perangkat'}
+            </p>
           </div>
 
           <form onSubmit={onAuth}>
@@ -93,13 +97,32 @@ const AccountTab = ({
 
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', fontWeight: '700', marginBottom: '4px', display: 'block' }}>EMAIL</label>
-              <input type="email" value={authEmail} onChange={e => onSetAuthEmail(e.target.value)} placeholder="email@example.com" />
+              <input type="email" value={authEmail} onChange={e => onSetAuthEmail(e.target.value)} placeholder="email@example.com" required />
             </div>
 
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: authMode === 'register' ? '12px' : '20px' }}>
               <label style={{ fontSize: '12px', fontWeight: '700', marginBottom: '4px', display: 'block' }}>PASSWORD</label>
-              <input type="password" value={authPassword} onChange={e => onSetAuthPassword(e.target.value)} placeholder="••••••••" />
+              <input 
+                type="password" 
+                value={authPassword} 
+                onChange={e => onSetAuthPassword(e.target.value)} 
+                placeholder={authMode === 'register' ? 'Minimal 6 karakter' : '••••••••'} 
+                required 
+              />
             </div>
+
+            {authMode === 'register' && (
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', marginBottom: '4px', display: 'block' }}>KONFIRMASI PASSWORD</label>
+                <input 
+                  type="password" 
+                  value={authConfirmPassword} 
+                  onChange={e => onSetAuthConfirmPassword(e.target.value)} 
+                  placeholder="Ketik ulang password di atas" 
+                  required 
+                />
+              </div>
+            )}
 
             <button type="submit" disabled={isSubmitting} className="btn-pressed-blue" style={{
               width: '100%', padding: '14px', background: '#1A1D1E', color: '#fff',
@@ -109,7 +132,7 @@ const AccountTab = ({
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
             }}>
               {isSubmitting ? <LoaderCircle size={18} className="animate-spin" /> : null}
-              {authMode === 'login' ? 'Login' : 'Daftar'}
+              {authMode === 'login' ? 'Login' : 'Daftar Sekarang'}
             </button>
 
             {showResend && (
@@ -135,12 +158,13 @@ const AccountTab = ({
               onSetAuthMode(authMode === 'login' ? 'register' : 'login');
               onSetAuthError('');
               onSetShowResend(false);
+              if (onSetAuthConfirmPassword) onSetAuthConfirmPassword('');
             }} style={{
               width: '100%', padding: '14px', background: '#FFFFFF', color: '#1A1D1E',
               border: '2px solid #1A1D1E', borderRadius: '12px', fontWeight: '700',
-              boxShadow: '4px 4px 0px #1A1D1E'
+              boxShadow: '4px 4px 0px #1A1D1E', cursor: 'pointer'
             }}>
-              {authMode === 'login' ? 'Belum punya akun? Daftar' : 'Sudah punya akun? Login'}
+              {authMode === 'login' ? 'Belum punya akun? Daftar di sini' : 'Sudah punya akun? Login di sini'}
             </button>
           </form>
         </div>
