@@ -190,57 +190,61 @@ const HomeTab = ({
 
 
       {/* Search & Filter Bar */}
-
-      <div style={{ marginTop: '24px', display: 'flex', gap: '8px' }}>
-
-                <div style={{ flex: 1, position: 'relative' }}>
-
-                  <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-55%)', color: '#999' }} />
-
-                  <input 
-
-         
-
-            type="text" 
-
-            placeholder="Cari transaksi..." 
-
-            value={searchQuery}
-
-            onChange={(e) => setSearchQuery(e.target.value)}
-
+      <div style={{ marginTop: '24px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Search 
+            size={18} 
             style={{ 
-
-              width: '100%', padding: '10px 10px 10px 40px', borderRadius: '12px', 
-
-              border: '2px solid #1A1D1E', fontSize: '14px', fontWeight: '600' 
-
-            }}
-
+              position: 'absolute', 
+              left: '12px', 
+              top: '50%', 
+              transform: 'translateY(-50%)', 
+              color: '#999',
+              pointerEvents: 'none'
+            }} 
           />
-
+          <input 
+            type="text" 
+            placeholder="Cari transaksi..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ 
+              width: '100%', 
+              height: '44px',
+              padding: '0 12px 0 40px', 
+              borderRadius: '12px', 
+              border: '2px solid #1A1D1E', 
+              fontSize: '14px', 
+              fontWeight: '600',
+              fontFamily: 'inherit',
+              background: '#FFFFFF',
+              margin: 0
+            }}
+          />
         </div>
-
         <button 
-
           onClick={() => setShowFilters(!showFilters)}
-
+          className="btn-pressed-blue"
           style={{ 
-
-            padding: '10px', borderRadius: '12px', border: '2px solid #1A1D1E', 
-
-            background: showFilters ? '#1A1D1E' : '#FFFFFF', color: showFilters ? '#FFFFFF' : '#1A1D1E',
-
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-
+            width: '44px',
+            height: '44px',
+            minWidth: '44px',
+            borderRadius: '12px', 
+            border: '2px solid #1A1D1E', 
+            background: showFilters ? '#1A1D1E' : '#FFFFFF', 
+            color: showFilters ? '#FFFFFF' : '#1A1D1E',
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '2px 2px 0px 0px rgba(0, 0, 0, 0.1)',
+            padding: 0,
+            margin: 0,
+            flexShrink: 0
           }}
-
         >
-
-          <Filter size={20} />
-
+          <Filter size={18} />
         </button>
-
       </div>
 
 
