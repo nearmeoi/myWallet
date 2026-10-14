@@ -62,10 +62,15 @@ a[href^="tel"], a[href^="mailto"], a[href^="sms"] {
   -webkit-text-fill-color: inherit;
 }
 
-input, select, textarea, button {
+input, select, textarea {
   font-family: var(--font-main);
   color: var(--text-primary);
   -webkit-text-fill-color: var(--text-primary);
+}
+
+button {
+  font-family: var(--font-main);
+  -webkit-text-fill-color: currentColor;
 }
 
 #root {

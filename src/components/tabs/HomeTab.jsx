@@ -155,55 +155,30 @@ const HomeTab = ({
           </h2>
 
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-
                       <button onClick={() => onOpenModal('transaction', 'income')} className="btn-pressed-blue" style={{
-
-                        flex: 1, minWidth: '100px', padding: '12px 8px', background: '#1A1D1E', color: '#fff',
-
-                        border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '700',
-
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '13px',
-
-                        boxShadow: '3px 3px 0px rgba(0,0,0,0.2)'
-
+                        flex: 1, minWidth: '100px', padding: '12px 10px', background: '#1A1D1E', color: '#fff',
+                        border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '700', fontFamily: 'inherit',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px',
+                        boxShadow: '3px 3px 0px rgba(0,0,0,0.2)', cursor: 'pointer'
                       }}>
-
                         <ArrowDownLeft size={16} /> Masuk
-
                       </button>
-
                       <button onClick={() => onOpenModal('transaction', 'expense')} className="btn-pressed-blue" style={{
-
-                        flex: 1, minWidth: '100px', padding: '12px 8px', background: '#FFFFFF', color: '#1A1D1E',
-
-                        border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '700',
-
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '13px',
-
-                        boxShadow: '3px 3px 0px #1A1D1E'
-
+                        flex: 1, minWidth: '100px', padding: '12px 10px', background: '#FFFFFF', color: '#1A1D1E',
+                        border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '700', fontFamily: 'inherit',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px',
+                        boxShadow: '3px 3px 0px #1A1D1E', cursor: 'pointer'
                       }}>
-
                         <ArrowUpRight size={16} /> Keluar
-
                       </button>
-
                       <button onClick={() => onOpenModal('transfer')} className="btn-pressed-blue" style={{
-
-                        flex: '1 1 100%', padding: '10px', background: '#E0CCF8', color: '#1A1D1E',
-
-                        border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '700',
-
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '13px',
-
-                        boxShadow: '3px 3px 0px #1A1D1E', marginTop: '4px'
-
+                        flex: '1 1 100%', padding: '12px 10px', background: '#E0CCF8', color: '#1A1D1E',
+                        border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '700', fontFamily: 'inherit',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px',
+                        boxShadow: '3px 3px 0px #1A1D1E', marginTop: '4px', cursor: 'pointer'
                       }}>
-
                         <ArrowLeftRight size={16} /> Transfer Antar Dompet
-
                       </button>
-
                     </div>
 
         </div>

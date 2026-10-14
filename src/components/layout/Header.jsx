@@ -31,14 +31,10 @@ const Header = ({ user, syncing, onSettingsClick }) => {
           <h1 style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
             {greeting}, {username}
           </h1>
-          {user ? (
+          {user && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#666', marginTop: '2px' }}>
               {syncing ? <LoaderCircle size={10} className="animate-spin" /> : <Cloud size={10} />}
               <span>{syncing ? 'Syncing...' : 'Synced'}</span>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#666', marginTop: '2px' }}>
-              <span>Mode Lokal (Offline)</span>
             </div>
           )}
         </div>
