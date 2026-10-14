@@ -17,9 +17,9 @@ const WishlistTab = ({
         <button onClick={() => onOpenModal('wishlist')} style={{
           width: '44px', height: '44px', background: '#E0CCF8', border: '2px solid #1A1D1E',
           borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '4px 4px 0px #1A1D1E'
+          boxShadow: '4px 4px 0px #1A1D1E', color: '#1A1D1E', cursor: 'pointer'
         }}>
-          <Plus size={24} />
+          <Plus size={24} color="#1A1D1E" />
         </button>
       </div>
 

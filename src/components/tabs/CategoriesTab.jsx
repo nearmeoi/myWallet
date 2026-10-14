@@ -29,10 +29,11 @@ const CategoriesTab = ({
 
       <div style={{ marginBottom: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '700' }}>Pemasukan</h3>
+          <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1A1D1E' }}>Pemasukan</h3>
           <button onClick={() => onOpenModal('category', 'income')} style={{
             padding: '6px 12px', background: '#D4F7E6', border: '2px solid #1A1D1E',
-            borderRadius: '8px', fontSize: '12px', fontWeight: '700', boxShadow: '2px 2px 0px #1A1D1E'
+            borderRadius: '8px', fontSize: '12px', fontWeight: '700', boxShadow: '2px 2px 0px #1A1D1E',
+            color: '#1A1D1E', cursor: 'pointer'
           }}>
             + Tambah
           </button>
@@ -43,13 +44,13 @@ const CategoriesTab = ({
             return (
               <div key={cat.id} style={{ padding: '16px', borderBottom: '2px solid #1A1D1E', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: '40px', height: '40px', background: cat.bg, border: '2px solid #1A1D1E', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <IconComp size={20} />
+                  <IconComp size={20} color="#1A1D1E" />
                 </div>
-                <span style={{ flex: 1, fontWeight: '700' }}>{cat.name}</span>
+                <span style={{ flex: 1, fontWeight: '700', color: '#1A1D1E' }}>{cat.name}</span>
                 {!cat.isDefault && (
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => onOpenModal('category', 'income', cat)} style={{ background: 'none', border: 'none' }}><Edit3 size={18} /></button>
-                    <button onClick={() => onDelete(cat.id)} style={{ background: 'none', border: 'none', color: '#EF4444' }}><Trash2 size={18} /></button>
+                    <button onClick={() => onOpenModal('category', 'income', cat)} style={{ background: 'none', border: 'none', color: '#1A1D1E', cursor: 'pointer' }}><Edit3 size={18} color="#1A1D1E" /></button>
+                    <button onClick={() => onDelete(cat.id)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer' }}><Trash2 size={18} color="#EF4444" /></button>
                   </div>
                 )}
                 {cat.isDefault && <span style={{ fontSize: '11px', color: '#999', background: '#F3F4F6', padding: '2px 8px', borderRadius: '10px' }}>Default</span>}
@@ -61,10 +62,11 @@ const CategoriesTab = ({
 
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '700' }}>Pengeluaran</h3>
+          <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1A1D1E' }}>Pengeluaran</h3>
           <button onClick={() => onOpenModal('category', 'expense')} style={{
             padding: '6px 12px', background: '#FFC0C0', border: '2px solid #1A1D1E',
-            borderRadius: '8px', fontSize: '12px', fontWeight: '700', boxShadow: '2px 2px 0px #1A1D1E'
+            borderRadius: '8px', fontSize: '12px', fontWeight: '700', boxShadow: '2px 2px 0px #1A1D1E',
+            color: '#1A1D1E', cursor: 'pointer'
           }}>
             + Tambah
           </button>
@@ -81,22 +83,22 @@ const CategoriesTab = ({
               <div key={cat.id} style={{ padding: '16px', borderBottom: '2px solid #1A1D1E' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: limit > 0 ? '8px' : '0' }}>
                   <div style={{ width: '40px', height: '40px', background: cat.bg, border: '2px solid #1A1D1E', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <IconComp size={20} />
+                    <IconComp size={20} color="#1A1D1E" />
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: '700' }}>{cat.name}</span>
+                      <span style={{ fontWeight: '700', color: '#1A1D1E' }}>{cat.name}</span>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <button onClick={() => onOpenModal('category', 'expense', cat)} style={{ 
                           padding: '4px 8px', background: '#FFFFFF', border: '1px solid #1A1D1E', 
                           borderRadius: '6px', fontSize: '11px', fontWeight: '700',
-                          display: 'flex', alignItems: 'center', gap: '4px'
+                          display: 'flex', alignItems: 'center', gap: '4px', color: '#1A1D1E', cursor: 'pointer'
                         }}>
-                          <Edit3 size={12} /> Budget
+                          <Edit3 size={12} color="#1A1D1E" /> Budget
                         </button>
                         {!cat.isDefault && (
-                          <button onClick={() => onDelete(cat.id)} style={{ background: 'none', border: 'none', color: '#EF4444' }}>
-                            <Trash2 size={18} />
+                          <button onClick={() => onDelete(cat.id)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer' }}>
+                            <Trash2 size={18} color="#EF4444" />
                           </button>
                         )}
                         {cat.isDefault && <span style={{ fontSize: '10px', color: '#999', background: '#F3F4F6', padding: '2px 6px', borderRadius: '10px' }}>Default</span>}

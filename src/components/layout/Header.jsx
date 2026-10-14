@@ -22,13 +22,13 @@ const Header = ({ user, syncing, onSettingsClick }) => {
           style={{
             width: '40px', height: '40px', borderRadius: '50%', background: user ? '#D4F7E6' : '#FEF08A',
             border: '2px solid #1A1D1E', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 0, cursor: 'pointer'
+            padding: 0, cursor: 'pointer', color: '#1A1D1E'
           }}
         >
-          <span style={{ fontWeight: '700' }}>{user ? user.email[0].toUpperCase() : 'G'}</span>
+          <span style={{ fontWeight: '700', color: '#1A1D1E' }}>{user ? user.email[0].toUpperCase() : 'G'}</span>
         </button>
         <div>
-          <h1 style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+          <h1 style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.03em', lineHeight: 1.2, color: '#1A1D1E' }}>
             {greeting}, {username}
           </h1>
           {user && (
@@ -45,10 +45,11 @@ const Header = ({ user, syncing, onSettingsClick }) => {
         style={{
           width: '40px', height: '40px', borderRadius: '12px', background: '#FFFFFF',
           border: '2px solid #1A1D1E', boxShadow: '2px 2px 0px #1A1D1E',
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#1A1D1E', cursor: 'pointer'
         }}
       >
-        <Settings size={20} />
+        <Settings size={20} color="#1A1D1E" />
       </button>
     </header>
   );

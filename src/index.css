@@ -70,6 +70,13 @@ input, select, textarea {
 
 button {
   font-family: var(--font-main);
+  color: var(--text-primary);
+  -webkit-text-fill-color: currentColor;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+button * {
   -webkit-text-fill-color: currentColor;
 }
 

@@ -330,11 +330,11 @@ function App() {
               <button onClick={() => {
                 setConfirmDelete(null);
                 if (window.history.state?.modal) window.history.back();
-              }} style={{ flex: 1, padding: '16px', background: '#fff', border: '2px solid #1A1D1E', borderRadius: '12px', fontWeight: '700' }}>Batal</button>
+              }} style={{ flex: 1, padding: '16px', background: '#fff', border: '2px solid #1A1D1E', borderRadius: '12px', fontWeight: '700', color: '#1A1D1E', cursor: 'pointer' }}>Batal</button>
               <button onClick={() => {
                 handleDelete();
                 if (window.history.state?.modal) window.history.back();
-              }} style={{ flex: 1, padding: '16px', background: '#FFC0C0', border: '2px solid #1A1D1E', borderRadius: '12px', fontWeight: '700', boxShadow: '2px 2px 0px #1A1D1E' }}>Hapus</button>
+              }} style={{ flex: 1, padding: '16px', background: '#FFC0C0', border: '2px solid #1A1D1E', borderRadius: '12px', fontWeight: '700', boxShadow: '2px 2px 0px #1A1D1E', color: '#1A1D1E', cursor: 'pointer' }}>Hapus</button>
             </div>
           </div>
         </div>

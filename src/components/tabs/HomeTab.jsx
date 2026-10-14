@@ -441,7 +441,7 @@ const HomeTab = ({
         <button onClick={() => setShowAllTransactions(!showAllTransactions)} style={{
           width: '100%', padding: '12px', marginTop: '16px', background: '#FFFFFF',
           border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '700',
-          boxShadow: '3px 3px 0px #1A1D1E'
+          boxShadow: '3px 3px 0px #1A1D1E', color: '#1A1D1E', cursor: 'pointer'
         }}>
           {showAllTransactions ? 'Sembunyikan' : 'Lihat Semua'}
         </button>

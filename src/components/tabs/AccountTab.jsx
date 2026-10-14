@@ -173,7 +173,8 @@ const AccountTab = ({
           <h3 style={{ fontSize: '16px', fontWeight: '700' }}>Dompet Saya</h3>
           <button onClick={() => onOpenModal('wallet')} className="btn-pressed-blue" style={{
             padding: '6px 12px', background: '#BBEFFA', border: '2px solid #1A1D1E',
-            borderRadius: '8px', fontSize: '12px', fontWeight: '700', boxShadow: '2px 2px 0px #1A1D1E'
+            borderRadius: '8px', fontSize: '12px', fontWeight: '700', boxShadow: '2px 2px 0px #1A1D1E',
+            color: '#1A1D1E', cursor: 'pointer'
           }}>
             + Tambah
           </button>
@@ -195,12 +196,12 @@ const AccountTab = ({
                   {w.type === 'cash' ? <Banknote size={20} /> : w.type === 'bank' ? <CreditCard size={20} /> : <Smartphone size={20} />}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontWeight: '700', fontSize: '14px' }}>{w.name}</p>
+                  <p style={{ fontWeight: '700', fontSize: '14px', color: '#1A1D1E' }}>{w.name}</p>
                   <p style={{ fontSize: '12px', color: '#666', textTransform: 'capitalize' }}>{w.type} • {formatRupiah(w.balance)}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => onOpenModal('wallet', '', w)} style={{ background: 'none', border: 'none' }}><Edit3 size={18} /></button>
-                  <button onClick={() => onDelete(w.id)} style={{ background: 'none', border: 'none', color: '#EF4444' }}><Trash2 size={18} /></button>
+                  <button onClick={() => onOpenModal('wallet', '', w)} style={{ background: 'none', border: 'none', color: '#1A1D1E', cursor: 'pointer' }}><Edit3 size={18} color="#1A1D1E" /></button>
+                  <button onClick={() => onDelete(w.id)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer' }}><Trash2 size={18} color="#EF4444" /></button>
                 </div>
               </div>
             ))

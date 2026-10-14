@@ -189,8 +189,8 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
             {currentMode === 'category' && (editingItem ? 'Edit Kategori' : 'Kategori Baru')}
             {currentMode === 'wallet' && (editingItem ? 'Edit Dompet' : 'Dompet Baru')}
           </h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-            <X size={24} />
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A1D1E' }}>
+            <X size={24} color="#1A1D1E" />
           </button>
         </div>
 
@@ -390,10 +390,10 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
                         style={{ 
                           width: '36px', height: '36px', background: '#FFFFFF', border: '2px solid #1A1D1E', 
                           borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          boxShadow: '2px 2px 0px #1A1D1E'
+                          boxShadow: '2px 2px 0px #1A1D1E', color: '#1A1D1E', cursor: 'pointer'
                         }}
                       >
-                        <span style={{ fontSize: '20px', fontWeight: '900' }}>+</span>
+                        <span style={{ fontSize: '20px', fontWeight: '900', color: '#1A1D1E' }}>+</span>
                       </button>
                     </div>
                   </div>
