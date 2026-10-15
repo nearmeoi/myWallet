@@ -61,21 +61,47 @@ function App() {
   // Confirm Delete State
   const [confirmDelete, setConfirmDelete] = useState(null); // { id, type }
 
-  // Back button handling for modals
+  // Scroll to top whenever tab changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [activeTab]);
+
+  // Back button handling for modals and sub-tabs
   useEffect(() => {
     const handlePopState = () => {
-      setShowModal(false);
-      setConfirmDelete(null);
+      if (showModal || confirmDelete) {
+        setShowModal(false);
+        setConfirmDelete(null);
+      } else if (activeTab === 'wallet' || activeTab === 'categories') {
+        setActiveTab('account');
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [showModal, confirmDelete, activeTab]);
 
   useEffect(() => {
     if (showModal || confirmDelete) {
       window.history.pushState({ modal: true }, '');
     }
   }, [showModal, confirmDelete]);
+
+  const handleTabChange = (newTab) => {
+    if ((newTab === 'wallet' || newTab === 'categories') && activeTab === 'account') {
+      window.history.pushState({ subTab: newTab }, '');
+    }
+    setActiveTab(newTab);
+  };
+
+  const handleBackFromSubTab = () => {
+    if (window.history.state?.subTab) {
+      window.history.back();
+    } else {
+      setActiveTab('account');
+    }
+  };
 
   // Computed Values
   const currentMonthExpenses = transactions.filter(t => {
@@ -225,7 +251,7 @@ function App() {
       <Header 
         user={user} 
         syncing={syncing || isRefreshing} 
-        onSettingsClick={() => setActiveTab('account')} 
+        onSettingsClick={() => handleTabChange('account')} 
         onRefresh={handleRefresh}
       />
 
@@ -268,7 +294,7 @@ function App() {
               expenseCategories={expenseCategories}
               transactions={transactions}
               onOpenModal={openModal}
-              onBack={() => setActiveTab('account')}
+              onBack={handleBackFromSubTab}
             />
           )}
 
@@ -279,7 +305,7 @@ function App() {
               transactions={transactions}
               onOpenModal={openModal}
               onDelete={(id) => triggerDelete(id, 'category')}
-              onBack={() => setActiveTab('account')}
+              onBack={handleBackFromSubTab}
             />
           )}
 
@@ -306,7 +332,7 @@ function App() {
               onSetShowResend={setShowResend}
               onSync={handleRefresh}
               onOpenModal={openModal}
-              onTabChange={setActiveTab}
+              onTabChange={handleTabChange}
               onDelete={(id) => triggerDelete(id, 'wallet')}
               addToast={addToast}
             />
@@ -317,7 +343,7 @@ function App() {
       {/* Bottom Navigation */}
       <BottomNav 
         activeTab={activeTab} 
-        onTabChange={setActiveTab} 
+        onTabChange={handleTabChange} 
         onAddClick={() => openModal('transaction')} 
       />
 

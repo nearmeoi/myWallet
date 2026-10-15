@@ -31,7 +31,7 @@ const BottomNav = ({ activeTab, onTabChange, onAddClick }) => {
       <button className={activeTab === 'savings' ? 'active' : ''} onClick={() => onTabChange('savings')}>
         <PiggyBank size={24} />
       </button>
-      <button className={activeTab === 'account' ? 'active' : ''} onClick={() => onTabChange('account')}>
+      <button className={activeTab === 'account' || activeTab === 'categories' || activeTab === 'wallet' ? 'active' : ''} onClick={() => onTabChange('account')}>
         <User size={24} />
       </button>
     </nav>

@@ -26,20 +26,24 @@ const CategoriesTab = ({
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-        {onBack && (
+      {onBack && (
+        <div style={{ marginBottom: '14px' }}>
           <button 
             onClick={onBack}
+            className="btn-pressed-blue"
             style={{
-              padding: '8px 12px', background: '#FFFFFF', border: '2px solid #1A1D1E',
-              borderRadius: '8px', fontWeight: '700', fontSize: '13px',
-              display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
+              padding: '6px 14px', background: '#FFFFFF', border: '2px solid #1A1D1E',
+              borderRadius: '8px', fontWeight: '800', fontSize: '13px',
+              display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
               boxShadow: '2px 2px 0px #1A1D1E', color: '#1A1D1E'
             }}
           >
             <ArrowLeft size={16} /> Kembali
           </button>
-        )}
+        </div>
+      )}
+
+      <div style={{ marginBottom: '20px' }}>
         <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0 }}>Kategori.</h2>
       </div>
 
