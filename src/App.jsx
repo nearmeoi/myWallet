@@ -147,18 +147,40 @@ function App() {
       if (authMode === 'login') {
         const { error } = await signIn(authEmail, authPassword);
         if (error) {
-          if (error.message.includes('Email not confirmed')) setShowResend(true);
+          if (error.message?.includes('Email not confirmed')) setShowResend(true);
           throw error;
         }
         addToast('Login berhasil!');
+        setAuthEmail('');
+        setAuthPassword('');
+        setAuthConfirmPassword('');
       } else {
-        const { error } = await signUp(authEmail, authPassword);
+        const { data, error } = await signUp(authEmail, authPassword);
         if (error) throw error;
-        addToast('Registrasi berhasil! Cek email untuk verifikasi.', 'info');
-        setShowResend(true);
+        if (data?.session) {
+          addToast('Registrasi berhasil! Selamat datang.');
+          setAuthEmail('');
+          setAuthPassword('');
+          setAuthConfirmPassword('');
+        } else {
+          addToast('Registrasi berhasil! Silakan cek email Anda.', 'info');
+          setShowResend(true);
+        }
       }
     } catch (err) {
-      setAuthError(err.message);
+      let msg = err.message || 'Terjadi kesalahan pada sistem autentikasi.';
+      if (msg.includes('Error sending confirmation email') || err.status === 500) {
+        msg = 'Gagal mengirim email verifikasi (kuota SMTP bawaan Supabase habis / limit 3 email/jam). Solusi: Buka Supabase Dashboard > Authentication > Providers > Email, lalu matikan toggle "Confirm email" agar user bisa langsung mendaftar tanpa verifikasi email.';
+      } else if (msg.includes('User already registered') || msg.includes('already registered')) {
+        msg = 'Email ini sudah terdaftar. Silakan langsung login.';
+      } else if (msg.includes('Invalid login credentials')) {
+        msg = 'Email atau password salah.';
+      } else if (msg.includes('Email not confirmed')) {
+        msg = 'Email belum dikonfirmasi. Cek inbox/spam Anda atau hubungi admin.';
+      } else if (msg.includes('Password should be at least 6 characters')) {
+        msg = 'Password minimal 6 karakter.';
+      }
+      setAuthError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -172,7 +194,11 @@ function App() {
       addToast('Email verifikasi dikirim ulang!', 'info');
       setShowResend(false);
     } catch (err) {
-      setAuthError(err.message);
+      let msg = err.message || 'Gagal mengirim ulang verifikasi.';
+      if (msg.includes('Error sending') || err.status === 500) {
+        msg = 'Gagal mengirim email (kuota mailer Supabase limit). Matikan "Confirm email" di Supabase Dashboard.';
+      }
+      setAuthError(msg);
     } finally {
       setIsSubmitting(false);
     }
