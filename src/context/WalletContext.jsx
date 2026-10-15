@@ -150,6 +150,27 @@ export function WalletProvider({ children }) {
     };
   }, [user]);
 
+  const resetData = useCallback(() => {
+    setTransactions([]);
+    setWishlist([]);
+    setMonthlyBudget(0);
+    setWallets([]);
+    setCategories(DEFAULT_CATEGORIES);
+    localStorage.removeItem('mywallet_transactions');
+    localStorage.removeItem('mywallet_wishlist');
+    localStorage.removeItem('mywallet_budget');
+    localStorage.removeItem('mywallet_wallets');
+    localStorage.setItem('mywallet_categories', JSON.stringify(DEFAULT_CATEGORIES));
+  }, []);
+
+  const prevUserRef = React.useRef(user);
+  useEffect(() => {
+    if (prevUserRef.current && !user) {
+      resetData();
+    }
+    prevUserRef.current = user;
+  }, [user, resetData]);
+
   // Local Persistence
   useEffect(() => localStorage.setItem('mywallet_transactions', JSON.stringify(transactions)), [transactions]);
   useEffect(() => localStorage.setItem('mywallet_wishlist', JSON.stringify(wishlist)), [wishlist]);
@@ -616,7 +637,8 @@ export function WalletProvider({ children }) {
     updateBudget,
     addTransfer,
     updateTransfer,
-    findTransferTwin
+    findTransferTwin,
+    resetWalletData: resetData
   };
 
   return (

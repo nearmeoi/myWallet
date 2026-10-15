@@ -21,6 +21,19 @@ export function SavingsProvider({ children }) {
   // Persist to localStorage
   useEffect(() => localStorage.setItem('mywallet_savings', JSON.stringify(savings)), [savings]);
 
+  const resetData = useCallback(() => {
+    setSavings([]);
+    localStorage.removeItem('mywallet_savings');
+  }, []);
+
+  const prevUserRef = React.useRef(user);
+  useEffect(() => {
+    if (prevUserRef.current && !user) {
+      resetData();
+    }
+    prevUserRef.current = user;
+  }, [user, resetData]);
+
   const loadSavings = useCallback(async () => {
     if (!user || !isSupabaseConfigured) return;
     try {
@@ -115,7 +128,8 @@ export function SavingsProvider({ children }) {
     withdrawSaving,
     updateSaving,
     deleteSaving,
-    refreshSavings: loadSavings
+    refreshSavings: loadSavings,
+    resetSavingsData: resetData
   };
 
   return (

@@ -23,6 +23,19 @@ export function DebtProvider({ children }) {
   // Persist to localStorage
   useEffect(() => localStorage.setItem('mywallet_debts', JSON.stringify(debts)), [debts]);
 
+  const resetData = useCallback(() => {
+    setDebts([]);
+    localStorage.removeItem('mywallet_debts');
+  }, []);
+
+  const prevUserRef = React.useRef(user);
+  useEffect(() => {
+    if (prevUserRef.current && !user) {
+      resetData();
+    }
+    prevUserRef.current = user;
+  }, [user, resetData]);
+
   const loadDebts = useCallback(async () => {
     if (!user || !isSupabaseConfigured) return;
     setSyncing(true);
@@ -109,7 +122,8 @@ export function DebtProvider({ children }) {
     updateDebt,
     deleteDebt,
     addPayment,
-    refreshDebts: loadDebts
+    refreshDebts: loadDebts,
+    resetDebtData: resetData
   };
 
   return (

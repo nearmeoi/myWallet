@@ -32,11 +32,11 @@ function App() {
     transactions, wallets, categories, monthlyBudget, syncing,
     displayBalance, totalExpense, totalIncome, syncToCloud,
     deleteTransaction, deleteWallet, deleteCategory,
-    addTransaction
+    addTransaction, resetWalletData
   } = useWallet();
 
-  const { deleteDebt, refreshDebts } = useDebt();
-  const { deleteSaving, refreshSavings } = useSavings();
+  const { deleteDebt, refreshDebts, resetDebtData } = useDebt();
+  const { deleteSaving, refreshSavings, resetSavingsData } = useSavings();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Auth Form State
@@ -205,8 +205,24 @@ function App() {
   };
 
   const handleLogout = async () => {
-    await signOut();
-    addToast('Berhasil logout', 'info');
+    try {
+      await signOut();
+    } catch (e) {
+      console.warn('SignOut error:', e);
+    }
+    if (resetWalletData) resetWalletData();
+    if (resetDebtData) resetDebtData();
+    if (resetSavingsData) resetSavingsData();
+
+    localStorage.removeItem('mywallet_transactions');
+    localStorage.removeItem('mywallet_wishlist');
+    localStorage.removeItem('mywallet_budget');
+    localStorage.removeItem('mywallet_wallets');
+    localStorage.removeItem('mywallet_debts');
+    localStorage.removeItem('mywallet_savings');
+    localStorage.setItem('mywallet_categories', JSON.stringify(DEFAULT_CATEGORIES));
+
+    addToast('Berhasil logout. Data akun telah dibersihkan.', 'info');
   };
 
   // Modal Helpers
@@ -290,6 +306,8 @@ function App() {
               transactions={transactions}
               categories={categories}
               wallets={wallets}
+              monthlyBudget={monthlyBudget}
+              budgetProgress={budgetProgress}
               onOpenModal={openModal}
               onDelete={(id) => triggerDelete(id, 'transaction')}
               onEdit={(item) => openModal(item.category === 'transfer' ? 'transfer' : 'transaction', item.type, item)}
