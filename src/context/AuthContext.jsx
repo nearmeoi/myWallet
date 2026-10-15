@@ -73,7 +73,14 @@ export function AuthProvider({ children }) {
 
   const updateProfile = async (updates) => {
     if (!isSupabaseConfigured) {
-      return { data: null, error: new Error('Supabase belum dikonfigurasi.') };
+      setUser(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          user_metadata: { ...prev.user_metadata, ...updates }
+        };
+      });
+      return { data: { user: { ...user, user_metadata: { ...user?.user_metadata, ...updates } } }, error: null };
     }
     const { data, error } = await supabaseUpdateProfile(updates);
     if (data?.user) setUser(data.user);

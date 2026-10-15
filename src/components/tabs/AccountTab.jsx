@@ -29,8 +29,15 @@ const AccountTab = ({
   onDelete,
   addToast
 }) => {
-  const { updateProfile } = useAuth();
   const [profileName, setProfileName] = useState(user?.user_metadata?.username || '');
+
+  React.useEffect(() => {
+    if (user?.user_metadata?.username) {
+      setProfileName(user.user_metadata.username);
+    }
+  }, [user?.user_metadata?.username]);
+
+  const displayName = (user?.user_metadata?.username || profileName || '').trim();
   const [isUpdating, setIsUpdating] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
 
@@ -151,10 +158,19 @@ const AccountTab = ({
       ) : (
         <div className="card" style={{ padding: '32px', textAlign: 'center' }}>
           <div style={{ width: '80px', height: '80px', margin: '0 auto 16px', background: '#D4F7E6', border: '2px solid #1A1D1E', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: '32px', fontWeight: '800' }}>{profileName ? profileName[0].toUpperCase() : user.email[0].toUpperCase()}</span>
+            <span style={{ fontSize: '32px', fontWeight: '800' }}>
+              {(displayName || user.email)[0].toUpperCase()}
+            </span>
           </div>
-          <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '4px' }}>{user.email}</h3>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: '#666', fontSize: '13px', marginBottom: '24px' }}>
+
+          <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '4px', color: '#1A1D1E' }}>
+            {displayName || user.email.split('@')[0]}
+          </h3>
+          <p style={{ fontSize: '13px', color: '#666', marginBottom: '14px', fontWeight: '500' }}>
+            {user.email}
+          </p>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: '#666', fontSize: '12px', marginBottom: '24px' }}>
             <Cloud size={14} /> Data tersinkronisasi
           </div>
 

@@ -25,7 +25,7 @@ const Header = ({ user, syncing, onSettingsClick, onRefresh }) => {
             padding: 0, cursor: 'pointer', color: '#1A1D1E'
           }}
         >
-          <span style={{ fontWeight: '700', color: '#1A1D1E' }}>{user ? user.email[0].toUpperCase() : 'G'}</span>
+          <span style={{ fontWeight: '700', color: '#1A1D1E' }}>{user ? (user.user_metadata?.username || user.email)[0].toUpperCase() : 'G'}</span>
         </button>
         <div>
           <h1 style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.03em', lineHeight: 1.2, color: '#1A1D1E' }}>
