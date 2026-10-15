@@ -91,14 +91,32 @@ button * {
   max-width: 480px;
   margin: 0 auto;
   min-height: 100vh;
-  padding: 20px;
-  padding-bottom: 100px;
-  /* Space for fixed bottom nav */
+  min-height: 100dvh;
+  padding: 16px 16px 100px 16px;
   position: relative;
   background: var(--bg-color);
-  border-left: var(--border-width) solid var(--border-color);
-  border-right: var(--border-width) solid var(--border-color);
-  min-height: 100vh;
+}
+
+/* PC / Tablet mockup frame (screens >= 500px) */
+@media (min-width: 500px) {
+  #root {
+    border-left: var(--border-width) solid var(--border-color);
+    border-right: var(--border-width) solid var(--border-color);
+    padding: 20px 20px 100px 20px;
+  }
+}
+
+/* Mobile screens (< 500px): clean edge-to-edge, remove side borders and dots */
+@media (max-width: 499px) {
+  body {
+    background-image: none !important;
+    background-color: var(--bg-color);
+  }
+  #root {
+    border-left: none !important;
+    border-right: none !important;
+    box-shadow: none !important;
+  }
 }
 
 /* Animations */
@@ -265,8 +283,8 @@ input:focus {
   width: 100%;
   max-width: 480px;
   border-top: var(--border-width) solid var(--border-color);
-  border-left: var(--border-width) solid var(--border-color);
-  border-right: var(--border-width) solid var(--border-color);
+  border-left: none;
+  border-right: none;
   border-radius: 24px 24px 0 0;
   box-shadow: 0 -4px 0 rgba(0, 0, 0, 0.1);
   animation: slideUp 0.25s ease-out;
@@ -280,7 +298,7 @@ input:focus {
 
 @media (min-width: 480px) {
   .modal-content {
-    border-bottom: var(--border-width) solid var(--border-color);
+    border: var(--border-width) solid var(--border-color);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-hard);
     max-height: 85vh;
