@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Tag, Banknote, CreditCard, Smartphone } from 'lucide-react';
+import { X, Tag, Banknote, CreditCard, Smartphone, ChevronDown, ChevronUp } from 'lucide-react';
 import { useWallet } from '../../context/WalletContext';
 import { AVAILABLE_ICONS, PRESET_COLORS } from '../../lib/constants';
 import { formatNumberInput, formatRupiah } from '../../lib/utils';
@@ -57,6 +57,7 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
   const [catBudget, setCatBudget] = useState(() => {
     return initialMode === 'category' && editingItem?.budgetLimit ? formatNumberInput(editingItem.budgetLimit) : '';
   });
+  const [showIconPicker, setShowIconPicker] = useState(false);
 
   // Wallet Form State
   const [walletName, setWalletName] = useState(() => {
@@ -78,20 +79,27 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
 
     if (currentMode === 'category') {
       if (!catName.trim()) return;
-      const newCat = {
-        id: `custom_${Date.now()}`,
-        name: catName.trim(),
-        icon: catIcon,
-        bg: catColor,
-        type: catType,
-        budgetLimit: parseFloat(catBudget.replace(/[^0-9]/g, '')) || 0,
-        isDefault: false
-      };
       if (editingItem) {
-        updateCategory(editingItem.id, newCat);
+        const updatedCat = {
+          name: catName.trim(),
+          icon: catIcon,
+          bg: catColor,
+          type: catType,
+          budgetLimit: parseFloat(catBudget.replace(/[^0-9]/g, '')) || 0
+        };
+        updateCategory(editingItem.id, updatedCat);
         addToast('Kategori diperbarui!');
         onClose();
       } else {
+        const newCat = {
+          id: `custom_${Date.now()}`,
+          name: catName.trim(),
+          icon: catIcon,
+          bg: catColor,
+          type: catType,
+          budgetLimit: parseFloat(catBudget.replace(/[^0-9]/g, '')) || 0,
+          isDefault: false
+        };
         addCategory(newCat);
         addToast('Kategori baru ditambahkan!');
         // If we came from transaction mode, go back to it
@@ -181,16 +189,16 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '24px', fontWeight: '900' }}>
+        <div className="modal-header">
+          <h3 style={{ fontSize: '20px', fontWeight: '900' }}>
             {currentMode === 'budget' && 'Set Budget'}
             {currentMode === 'wishlist' && (editingItem ? 'Edit Item' : 'New Item')}
-            {currentMode === 'transaction' && (editingItem ? 'Edit' : 'Transaksi Baru')}
+            {currentMode === 'transaction' && (editingItem ? 'Edit Transaksi' : 'Transaksi Baru')}
             {currentMode === 'category' && (editingItem ? 'Edit Kategori' : 'Kategori Baru')}
             {currentMode === 'wallet' && (editingItem ? 'Edit Dompet' : 'Dompet Baru')}
           </h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A1D1E' }}>
-            <X size={24} color="#1A1D1E" />
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A1D1E', padding: '4px' }}>
+            <X size={22} color="#1A1D1E" />
           </button>
         </div>
 
@@ -235,22 +243,82 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
               )}
 
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ fontSize: '12px', fontWeight: '700', marginBottom: '8px', display: 'block' }}>IKON</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {Object.keys(AVAILABLE_ICONS).map(iconName => {
-                    const IconComp = AVAILABLE_ICONS[iconName];
-                    return (
-                      <button key={iconName} type="button" onClick={() => setCatIcon(iconName)} style={{
-                        width: '44px', height: '44px', border: '2px solid #1A1D1E', borderRadius: '8px',
-                        background: catIcon === iconName ? '#1A1D1E' : '#fff',
-                        color: catIcon === iconName ? '#fff' : '#1A1D1E',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                      }}>
-                        <IconComp size={20} />
-                      </button>
-                    );
-                  })}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '700' }}>IKON</label>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowIconPicker(prev => !prev)}
+                    style={{
+                      background: 'none', border: 'none', color: '#1A1D1E',
+                      fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: '4px'
+                    }}
+                  >
+                    {showIconPicker ? 'Tutup Ikon' : 'Pilih Ikon'}
+                    {showIconPicker ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
                 </div>
+
+                {/* Selected Icon Preview Card */}
+                <div 
+                  onClick={() => setShowIconPicker(prev => !prev)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '10px 14px', background: '#FFFFFF',
+                    border: '2px solid #1A1D1E', borderRadius: '10px',
+                    cursor: 'pointer', boxShadow: '2px 2px 0px #1A1D1E'
+                  }}
+                >
+                  <div style={{
+                    width: '38px', height: '38px', background: catColor,
+                    border: '2px solid #1A1D1E', borderRadius: '8px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    {AVAILABLE_ICONS[catIcon] ? React.createElement(AVAILABLE_ICONS[catIcon], { size: 20, color: '#1A1D1E' }) : <Tag size={20} />}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '14px', fontWeight: '700', color: '#1A1D1E' }}>{catIcon}</p>
+                    <p style={{ fontSize: '11px', color: '#666' }}>{showIconPicker ? 'Pilih salah satu ikon di bawah' : 'Ketuk untuk mengganti ikon'}</p>
+                  </div>
+                  {showIconPicker ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                </div>
+
+                {/* Collapsible Icon Grid */}
+                {showIconPicker && (
+                  <div style={{
+                    marginTop: '10px', padding: '12px',
+                    background: '#F9FAFB', border: '2px solid #1A1D1E', borderRadius: '10px',
+                    maxHeight: '180px', overflowY: 'auto'
+                  }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {Object.keys(AVAILABLE_ICONS).map(iconName => {
+                        const IconComp = AVAILABLE_ICONS[iconName];
+                        const isSelected = catIcon === iconName;
+                        return (
+                          <button 
+                            key={iconName} 
+                            type="button" 
+                            onClick={() => {
+                              setCatIcon(iconName);
+                              setShowIconPicker(false);
+                            }} 
+                            style={{
+                              width: '40px', height: '40px', border: '2px solid #1A1D1E', borderRadius: '8px',
+                              background: isSelected ? '#1A1D1E' : '#fff',
+                              color: isSelected ? '#fff' : '#1A1D1E',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              cursor: 'pointer',
+                              boxShadow: isSelected ? 'none' : '2px 2px 0px rgba(0,0,0,0.1)'
+                            }}
+                            title={iconName}
+                          >
+                            <IconComp size={18} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div style={{ marginBottom: '24px' }}>
@@ -407,7 +475,13 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
             border: '2px solid #1A1D1E', borderRadius: '12px', fontWeight: '700',
             boxShadow: '4px 4px 0px rgba(0,0,0,0.2)', marginTop: '8px'
           }}>
-            Simpan {currentMode === 'transaction' ? 'Transaksi' : currentMode === 'transfer' ? 'Transfer' : currentMode === 'wishlist' ? 'Wishlist' : 'Dompet'}
+            Simpan {
+              currentMode === 'transaction' ? 'Transaksi' :
+              currentMode === 'transfer' ? 'Transfer' :
+              currentMode === 'category' ? 'Kategori' :
+              currentMode === 'budget' ? 'Budget' :
+              'Dompet'
+            }
           </button>
         </form>
       </div>

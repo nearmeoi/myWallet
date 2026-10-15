@@ -44,11 +44,16 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html, body {
+  touch-action: pan-x pan-y;
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   font-family: var(--font-main);
   background-color: var(--bg-color);
   color: var(--text-primary);
-  -webkit-text-size-adjust: 100%;
   min-height: 100vh;
   /* Dotted background pattern */
   background-image: radial-gradient(#1A1D1E 1px, transparent 1px);
@@ -66,6 +71,7 @@ input, select, textarea {
   font-family: var(--font-main);
   color: var(--text-primary);
   -webkit-text-fill-color: var(--text-primary);
+  font-size: 16px;
 }
 
 button {
@@ -233,18 +239,24 @@ input:focus {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(26, 29, 30, 0.4);
-  backdrop-filter: blur(2px);
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  background: rgba(26, 29, 30, 0.5);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   z-index: 1000;
   display: flex;
-  align-items: flex-end;
-  /* Bottom sheet on mobile */
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  overflow: hidden;
 }
 
 @media (min-width: 480px) {
   .modal-overlay {
-    align-items: center;
+    justify-content: center;
+    padding: 20px;
   }
 }
 
@@ -256,19 +268,45 @@ input:focus {
   border-left: var(--border-width) solid var(--border-color);
   border-right: var(--border-width) solid var(--border-color);
   border-radius: 24px 24px 0 0;
-  padding: 24px;
-  padding-bottom: max(32px, env(safe-area-inset-bottom));
-  animation: slideUp 0.3s ease-out;
   box-shadow: 0 -4px 0 rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.25s ease-out;
+  display: flex;
+  flex-direction: column;
+  max-height: 88vh;
+  max-height: 88dvh;
+  overflow: hidden;
+  padding: 0;
 }
 
 @media (min-width: 480px) {
   .modal-content {
     border-bottom: var(--border-width) solid var(--border-color);
     border-radius: var(--border-radius);
-    margin: 20px;
     box-shadow: var(--shadow-hard);
+    max-height: 85vh;
+    max-height: 85dvh;
   }
+}
+
+.modal-header {
+  padding: 18px 20px 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  border-bottom: 2px solid #1A1D1E;
+  background: var(--card-bg);
+}
+
+.modal-content form,
+.modal-body {
+  padding: 20px;
+  padding-bottom: max(32px, env(safe-area-inset-bottom, 32px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  min-height: 0;
+  overscroll-behavior: contain;
 }
 
 /* Fixed Bottom Nav */

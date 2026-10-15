@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, LogOut, LoaderCircle, Cloud, Tag, ChevronRight, Banknote, CreditCard, Smartphone, Edit3, Trash2, Save } from 'lucide-react';
+import { User, LogOut, LoaderCircle, Cloud, Tag, ChevronRight, Banknote, CreditCard, Smartphone, Edit3, Trash2, Save, PieChart } from 'lucide-react';
 import { formatRupiah } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 
@@ -208,8 +208,13 @@ const AccountTab = ({
           )}
         </div>
 
-        <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '12px' }}>Pengaturan</h3>
+        <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '12px' }}>Pengaturan & Fitur</h3>
         <div className="card" style={{ padding: '0', margin: 0 }}>
+          <div onClick={() => onTabChange('wallet')} style={{ padding: '16px', borderBottom: '2px solid #1A1D1E', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+            <PieChart size={20} />
+            <span style={{ flex: 1, fontWeight: '600' }}>Ringkasan & Budget Bulanan</span>
+            <ChevronRight size={20} color="#999" />
+          </div>
           <div onClick={() => onTabChange('categories')} style={{ padding: '16px', borderBottom: '2px solid #1A1D1E', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
             <Tag size={20} />
             <span style={{ flex: 1, fontWeight: '600' }}>Kelola Kategori</span>

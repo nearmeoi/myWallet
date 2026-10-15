@@ -1,7 +1,7 @@
 import React from 'react';
-import { Cloud, LoaderCircle, Settings } from 'lucide-react';
+import { Cloud, LoaderCircle, Settings, RefreshCw } from 'lucide-react';
 
-const Header = ({ user, syncing, onSettingsClick }) => {
+const Header = ({ user, syncing, onSettingsClick, onRefresh }) => {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 11) return 'Pagi';
@@ -39,18 +39,37 @@ const Header = ({ user, syncing, onSettingsClick }) => {
           )}
         </div>
       </div>
-      <button 
-        onClick={onSettingsClick} 
-        className="btn-pressed-blue"
-        style={{
-          width: '40px', height: '40px', borderRadius: '12px', background: '#FFFFFF',
-          border: '2px solid #1A1D1E', boxShadow: '2px 2px 0px #1A1D1E',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#1A1D1E', cursor: 'pointer'
-        }}
-      >
-        <Settings size={20} color="#1A1D1E" />
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {onRefresh && (
+          <button 
+            onClick={onRefresh} 
+            className="btn-pressed-blue"
+            title="Refresh Data"
+            disabled={syncing}
+            style={{
+              width: '40px', height: '40px', borderRadius: '12px', background: '#FFFFFF',
+              border: '2px solid #1A1D1E', boxShadow: '2px 2px 0px #1A1D1E',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#1A1D1E', cursor: syncing ? 'not-allowed' : 'pointer'
+            }}
+          >
+            <RefreshCw size={18} className={syncing ? 'animate-spin' : ''} color="#1A1D1E" />
+          </button>
+        )}
+        <button 
+          onClick={onSettingsClick} 
+          className="btn-pressed-blue"
+          title="Pengaturan"
+          style={{
+            width: '40px', height: '40px', borderRadius: '12px', background: '#FFFFFF',
+            border: '2px solid #1A1D1E', boxShadow: '2px 2px 0px #1A1D1E',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#1A1D1E', cursor: 'pointer'
+          }}
+        >
+          <Settings size={20} color="#1A1D1E" />
+        </button>
+      </div>
     </header>
   );
 };

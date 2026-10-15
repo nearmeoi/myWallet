@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, MoreHorizontal, Banknote, CreditCard, Smartphone } from 'lucide-react';
+import { Target, MoreHorizontal, Banknote, CreditCard, Smartphone, ArrowLeft } from 'lucide-react';
 import { AVAILABLE_ICONS } from '../../lib/constants';
 import { formatRupiah } from '../../lib/utils';
 
@@ -11,11 +11,27 @@ const WalletTab = ({
   wallets,
   expenseCategories,
   transactions,
-  onOpenModal
+  onOpenModal,
+  onBack
 }) => {
   return (
     <>
-      <h2 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '20px' }}>Ringkasan.</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+        {onBack && (
+          <button 
+            onClick={onBack}
+            style={{
+              padding: '8px 12px', background: '#FFFFFF', border: '2px solid #1A1D1E',
+              borderRadius: '8px', fontWeight: '700', fontSize: '13px',
+              display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
+              boxShadow: '2px 2px 0px #1A1D1E', color: '#1A1D1E'
+            }}
+          >
+            <ArrowLeft size={16} /> Kembali
+          </button>
+        )}
+        <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0 }}>Ringkasan.</h2>
+      </div>
 
       <div className="card" onClick={() => onOpenModal('budget')} style={{
         background: '#1A1D1E', color: '#fff', cursor: 'pointer',

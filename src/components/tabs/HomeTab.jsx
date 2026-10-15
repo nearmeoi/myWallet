@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, MoreHorizontal, ArrowLeftRight, Search, Filter } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, MoreHorizontal, ArrowLeftRight, Search, Filter, AlertCircle } from 'lucide-react';
 import TransactionCard from '../TransactionCard';
 import { AVAILABLE_ICONS } from '../../lib/constants';
 import { formatDate, formatRupiah } from '../../lib/utils';
+import { useDebt } from '../../context/DebtContext';
+
 
 const HomeTab = ({ 
 
@@ -21,6 +23,8 @@ const HomeTab = ({
   onEdit 
 
 }) => {
+  const { totalOwed } = useDebt();
+
 
   const [showAllTransactions, setShowAllTransactions] = useState(false);
 
@@ -44,7 +48,15 @@ const HomeTab = ({
 
 
 
-  const getCategoryById = (id) => categories.find(c => c.id === id) || { name: 'Lainnya', icon: 'MoreHorizontal', bg: '#F3F4F6' };
+  const getCategoryById = (id) => {
+    if (id === 'saving' || id === 'saving_in' || id === 'saving_out') {
+      return { name: 'Tabungan', icon: 'PiggyBank', bg: '#D4F7E6' };
+    }
+    if (id === 'transfer') {
+      return { name: 'Transfer', icon: 'ArrowLeftRight', bg: '#E0CCF8' };
+    }
+    return categories.find(c => c.id === id) || { name: 'Lainnya', icon: 'MoreHorizontal', bg: '#F3F4F6' };
+  };
 
 
 
@@ -148,11 +160,26 @@ const HomeTab = ({
 
           <p style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Total Saldo.</p>
 
-          <h2 style={{ fontSize: '40px', fontWeight: '900', marginBottom: '24px', lineHeight: '1' }}>
+          <h2 style={{ fontSize: '40px', fontWeight: '900', marginBottom: totalOwed > 0 ? '8px' : '24px', lineHeight: '1' }}>
 
             {formatRupiah(balance)}
 
           </h2>
+
+          {/* Debt Indicator */}
+          {totalOwed > 0 && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              marginBottom: '16px', padding: '6px 10px',
+              background: '#FFC0C0', border: '2px solid #1A1D1E', borderRadius: '8px',
+              width: 'fit-content'
+            }}>
+              <AlertCircle size={14} color="#EF4444" />
+              <span style={{ fontSize: '13px', fontWeight: '800', color: '#EF4444' }}>
+                Hutang: -{formatRupiah(totalOwed)}
+              </span>
+            </div>
+          )}
 
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       <button onClick={() => onOpenModal('transaction', 'income')} className="btn-pressed-blue" style={{
@@ -186,6 +213,7 @@ const HomeTab = ({
         <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', background: '#FEF08A', borderRadius: '50%', border: '2px solid #1A1D1E', zIndex: 0 }} />
 
       </section>
+
 
 
 

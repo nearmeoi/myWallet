@@ -9,6 +9,12 @@ import '@fontsource/outfit/600.css';
 import '@fontsource/outfit/700.css';
 import { AuthProvider } from './context/AuthContext';
 import { WalletProvider } from './context/WalletContext';
+import { DebtProvider } from './context/DebtContext';
+import { SavingsProvider } from './context/SavingsContext';
+import { setupPreventZoom } from './lib/preventZoom';
+
+// Prevent iOS Safari pinch-to-zoom and unwanted gesture zooming
+setupPreventZoom();
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -45,7 +51,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       <AuthProvider>
         <WalletProvider>
-          <App />
+          <DebtProvider>
+            <SavingsProvider>
+              <App />
+            </SavingsProvider>
+          </DebtProvider>
         </WalletProvider>
       </AuthProvider>
     </ErrorBoundary>

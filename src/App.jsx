@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { LoaderCircle, Trash2 } from 'lucide-react';
+import { LoaderCircle } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { useWallet } from './context/WalletContext';
+import { useDebt } from './context/DebtContext';
+import { useSavings } from './context/SavingsContext';
 import Toast from './components/ui/Toast';
+import ConfirmDialog from './components/ui/ConfirmDialog';
+import PullToRefresh from './components/ui/PullToRefresh';
 import Header from './components/layout/Header';
 import BottomNav from './components/layout/BottomNav';
 import ActionModal from './components/modals/ActionModal';
+import DebtModal from './components/modals/DebtModal';
+import SavingsModal from './components/modals/SavingsModal';
 
 // Tabs
 import HomeTab from './components/tabs/HomeTab';
-import WishlistTab from './components/tabs/WishlistTab';
+import DebtTab from './components/tabs/DebtTab';
+import SavingsTab from './components/tabs/SavingsTab';
 import WalletTab from './components/tabs/WalletTab';
 import CategoriesTab from './components/tabs/CategoriesTab';
 import AccountTab from './components/tabs/AccountTab';
@@ -22,11 +29,15 @@ function App() {
   } = useAuth();
   
   const {
-    transactions, wallets, categories, wishlist, monthlyBudget, syncing,
+    transactions, wallets, categories, monthlyBudget, syncing,
     displayBalance, totalExpense, totalIncome, syncToCloud,
-    deleteTransaction, deleteWallet, deleteCategory, deleteWishlistItem,
-    addTransaction // needed for markPurchased
+    deleteTransaction, deleteWallet, deleteCategory,
+    addTransaction
   } = useWallet();
+
+  const { deleteDebt, refreshDebts } = useDebt();
+  const { deleteSaving, refreshSavings } = useSavings();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Auth Form State
   const [authMode, setAuthMode] = useState('login');
@@ -39,29 +50,27 @@ function App() {
 
   // UI State
   const [activeTab, setActiveTab] = useState('home');
+  const [toasts, setToasts] = useState([]);
+
+  // Modal State
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('transaction');
   const [modalType, setModalType] = useState('income');
   const [editingItem, setEditingItem] = useState(null);
-  const [toasts, setToasts] = useState([]);
 
-  // Confirmation State
-  const [confirmDelete, setConfirmDelete] = useState(null);
-  const [deleteType, setDeleteType] = useState(null);
+  // Confirm Delete State
+  const [confirmDelete, setConfirmDelete] = useState(null); // { id, type }
 
-  // Handle Back Button for Modals
+  // Back button handling for modals
   useEffect(() => {
     const handlePopState = () => {
-      // If user presses back, close all modals
       setShowModal(false);
       setConfirmDelete(null);
     };
-
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Update history when modal opens
   useEffect(() => {
     if (showModal || confirmDelete) {
       window.history.pushState({ modal: true }, '');
@@ -69,11 +78,11 @@ function App() {
   }, [showModal, confirmDelete]);
 
   // Computed Values
-  const wishlistTotal = wishlist.reduce((a, b) => a + b.price, 0);
   const currentMonthExpenses = transactions.filter(t => {
     const d = new Date(t.timestamp);
     const now = new Date();
-    return t.type === 'expense' && t.category !== 'transfer' && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    return t.type === 'expense' && t.category !== 'transfer' && t.category !== 'saving'
+      && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).reduce((a, b) => a + b.amount, 0);
   const budgetProgress = monthlyBudget > 0 ? (currentMonthExpenses / monthlyBudget) * 100 : 0;
   
@@ -85,10 +94,7 @@ function App() {
     const id = Date.now();
     setToasts(prev => {
       const next = [...prev, { id, message, type }];
-      if (next.length > 3) {
-        return next.slice(1); // Remove the oldest one
-      }
-      return next;
+      return next.length > 3 ? next.slice(1) : next;
     });
   };
   const removeToast = (id) => setToasts(prev => prev.filter(t => t.id !== id));
@@ -104,30 +110,18 @@ function App() {
         setAuthError('Email, password, dan konfirmasi password harus diisi');
         return;
       }
-      if (authPassword.length < 6) {
-        setAuthError('Password minimal 6 karakter');
-        return;
-      }
-      if (authPassword !== authConfirmPassword) {
-        setAuthError('Password dan konfirmasi password tidak cocok');
-        return;
-      }
+      if (authPassword.length < 6) { setAuthError('Password minimal 6 karakter'); return; }
+      if (authPassword !== authConfirmPassword) { setAuthError('Password tidak cocok'); return; }
     } else {
-      if (!authEmail || !authPassword) {
-        setAuthError('Email dan password harus diisi');
-        return;
-      }
+      if (!authEmail || !authPassword) { setAuthError('Email dan password harus diisi'); return; }
     }
 
     setIsSubmitting(true);
-
     try {
       if (authMode === 'login') {
         const { error } = await signIn(authEmail, authPassword);
         if (error) {
-          if (error.message.includes('Email not confirmed')) {
-            setShowResend(true);
-          }
+          if (error.message.includes('Email not confirmed')) setShowResend(true);
           throw error;
         }
         addToast('Login berhasil!');
@@ -171,33 +165,46 @@ function App() {
     setShowModal(true);
   };
 
-  // Delete Handlers
+  // Delete Handler
   const handleDelete = () => {
-    if (deleteType === 'wishlist') {
-      deleteWishlistItem(confirmDelete);
-    } else if (deleteType === 'category') {
-      deleteCategory(confirmDelete);
-    } else if (deleteType === 'wallet') {
-      deleteWallet(confirmDelete);
-    } else {
-      deleteTransaction(confirmDelete);
-    }
+    if (!confirmDelete) return;
+    const { id, type } = confirmDelete;
+
+    if (type === 'transaction') deleteTransaction(id);
+    else if (type === 'category') deleteCategory(id);
+    else if (type === 'wallet') deleteWallet(id);
+    else if (type === 'debt') deleteDebt(id);
+    else if (type === 'saving') deleteSaving(id);
+
     addToast('Dihapus', 'info');
     setConfirmDelete(null);
+    if (window.history.state?.modal) window.history.back();
   };
 
-  const markPurchased = (item) => {
-    deleteWishlistItem(item.id);
-    const shoppingCat = categories.find(c => c.id === 'shopping') || categories.find(c => c.type === 'expense');
-    addTransaction({
-      title: item.name,
-      amount: item.price,
-      type: 'expense',
-      category: shoppingCat?.id || 'shopping',
-      walletId: wallets.length > 0 ? wallets[0].id : null
-    });
-    addToast('Barang dibeli!');
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const p = [];
+      if (syncToCloud) p.push(syncToCloud());
+      if (refreshDebts) p.push(refreshDebts());
+      if (refreshSavings) p.push(refreshSavings());
+      await Promise.all(p);
+      addToast('Data tersinkronisasi!', 'success');
+    } catch (err) {
+      addToast('Gagal memuat ulang data', 'error');
+    } finally {
+      setIsRefreshing(false);
+    }
   };
+
+  const triggerDelete = (id, type) => {
+    setConfirmDelete({ id, type });
+  };
+
+  // Determine which modal to render
+  const isDebtModal = showModal && (modalMode === 'debt' || modalMode === 'debtPayment');
+  const isSavingsModal = showModal && (modalMode === 'saving' || modalMode === 'savingTopUp' || modalMode === 'savingWithdraw');
+  const isActionModal = showModal && !isDebtModal && !isSavingsModal;
 
   if (authLoading) {
     return (
@@ -215,81 +222,97 @@ function App() {
       </div>
 
       {/* Header */}
-      <Header user={user} syncing={syncing} onSettingsClick={() => setActiveTab('account')} />
+      <Header 
+        user={user} 
+        syncing={syncing || isRefreshing} 
+        onSettingsClick={() => setActiveTab('account')} 
+        onRefresh={handleRefresh}
+      />
 
-      {/* Main Content */}
-      <main style={{ paddingBottom: '20px' }}>
-        {activeTab === 'home' && (
-          <HomeTab 
-            balance={displayBalance}
-            transactions={transactions}
-            categories={categories}
-            wallets={wallets}
-            onOpenModal={openModal}
-            onDelete={(id) => { setConfirmDelete(id); setDeleteType('transaction'); }}
-            onEdit={(item) => openModal('transaction', item.type, item)}
-          />
-        )}
-        {activeTab === 'wishlist' && (
-          <WishlistTab 
-            wishlist={wishlist}
-            balance={displayBalance}
-            wishlistTotal={wishlistTotal}
-            onOpenModal={openModal}
-            onMarkPurchased={markPurchased}
-            onDelete={(id) => { setConfirmDelete(id); setDeleteType('wishlist'); }}
-          />
-        )}
-        {activeTab === 'wallet' && (
-          <WalletTab 
-            monthlyBudget={monthlyBudget}
-            budgetProgress={budgetProgress}
-            totalIncome={totalIncome}
-            totalExpense={totalExpense}
-            wallets={wallets}
-            expenseCategories={expenseCategories}
-            transactions={transactions}
-            onOpenModal={openModal}
-          />
-        )}
-        {activeTab === 'categories' && (
-          <CategoriesTab 
-            incomeCategories={incomeCategories}
-            expenseCategories={expenseCategories}
-            transactions={transactions}
-            onOpenModal={openModal}
-            onDelete={(id) => { setConfirmDelete(id); setDeleteType('category'); }}
-          />
-        )}
-        {activeTab === 'account' && (
-          <AccountTab 
-            user={user}
-            authMode={authMode}
-            authEmail={authEmail}
-            authPassword={authPassword}
-            authConfirmPassword={authConfirmPassword}
-            authError={authError}
-            isSubmitting={isSubmitting}
-            showResend={showResend}
-            syncing={syncing}
-            wallets={wallets}
-            onAuth={handleAuth}
-            onResend={handleResend}
-            onLogout={handleLogout}
-            onSetAuthMode={setAuthMode}
-            onSetAuthEmail={setAuthEmail}
-            onSetAuthPassword={setAuthPassword}
-            onSetAuthConfirmPassword={setAuthConfirmPassword}
-            onSetAuthError={setAuthError}
-            onSetShowResend={setShowResend}
-            onSync={syncToCloud}
-            onOpenModal={openModal}
-            onTabChange={setActiveTab}
-            onDelete={(id) => { setConfirmDelete(id); setDeleteType('wallet'); }}
-            addToast={addToast}
-          />
-        )}
-      </main>
+      {/* Main Content with Pull-To-Refresh */}
+      <PullToRefresh onRefresh={handleRefresh} refreshing={syncing || isRefreshing}>
+        <main style={{ paddingBottom: '20px' }}>
+          {activeTab === 'home' && (
+            <HomeTab 
+              balance={displayBalance}
+              transactions={transactions}
+              categories={categories}
+              wallets={wallets}
+              onOpenModal={openModal}
+              onDelete={(id) => triggerDelete(id, 'transaction')}
+              onEdit={(item) => openModal('transaction', item.type, item)}
+            />
+          )}
+
+          {activeTab === 'debt' && (
+            <DebtTab
+              onOpenModal={openModal}
+              onDelete={(id, type) => triggerDelete(id, type)}
+            />
+          )}
+
+          {activeTab === 'savings' && (
+            <SavingsTab
+              onOpenModal={openModal}
+              onDelete={(id, type) => triggerDelete(id, type)}
+            />
+          )}
+
+          {activeTab === 'wallet' && (
+            <WalletTab 
+              monthlyBudget={monthlyBudget}
+              budgetProgress={budgetProgress}
+              totalIncome={totalIncome}
+              totalExpense={totalExpense}
+              wallets={wallets}
+              expenseCategories={expenseCategories}
+              transactions={transactions}
+              onOpenModal={openModal}
+              onBack={() => setActiveTab('account')}
+            />
+          )}
+
+          {activeTab === 'categories' && (
+            <CategoriesTab 
+              incomeCategories={incomeCategories}
+              expenseCategories={expenseCategories}
+              transactions={transactions}
+              onOpenModal={openModal}
+              onDelete={(id) => triggerDelete(id, 'category')}
+              onBack={() => setActiveTab('account')}
+            />
+          )}
+
+          {activeTab === 'account' && (
+            <AccountTab 
+              user={user}
+              authMode={authMode}
+              authEmail={authEmail}
+              authPassword={authPassword}
+              authConfirmPassword={authConfirmPassword}
+              authError={authError}
+              isSubmitting={isSubmitting}
+              showResend={showResend}
+              syncing={syncing || isRefreshing}
+              wallets={wallets}
+              onAuth={handleAuth}
+              onResend={handleResend}
+              onLogout={handleLogout}
+              onSetAuthMode={setAuthMode}
+              onSetAuthEmail={setAuthEmail}
+              onSetAuthPassword={setAuthPassword}
+              onSetAuthConfirmPassword={setAuthConfirmPassword}
+              onSetAuthError={setAuthError}
+              onSetShowResend={setShowResend}
+              onSync={handleRefresh}
+              onOpenModal={openModal}
+              onTabChange={setActiveTab}
+              onDelete={(id) => triggerDelete(id, 'wallet')}
+              addToast={addToast}
+            />
+          )}
+        </main>
+      </PullToRefresh>
 
       {/* Bottom Navigation */}
       <BottomNav 
@@ -298,11 +321,11 @@ function App() {
         onAddClick={() => openModal('transaction')} 
       />
 
-      {/* Action Modal */}
-      {showModal && (
+      {/* Action Modal (transaction, wallet, category, budget, transfer) */}
+      {isActionModal && (
         <ActionModal 
           key={`${modalMode}-${modalType}-${editingItem?.id || 'new'}`}
-          isOpen={showModal}
+          isOpen={isActionModal}
           onClose={() => {
             setShowModal(false);
             if (window.history.state?.modal) window.history.back();
@@ -314,30 +337,45 @@ function App() {
         />
       )}
 
+      {/* Debt Modal */}
+      {isDebtModal && (
+        <DebtModal
+          key={`debt-${editingItem?.id || 'new'}`}
+          isOpen={isDebtModal}
+          onClose={() => {
+            setShowModal(false);
+            if (window.history.state?.modal) window.history.back();
+          }}
+          mode={modalMode}
+          editingItem={editingItem}
+          addToast={addToast}
+        />
+      )}
+
+      {/* Savings Modal */}
+      {isSavingsModal && (
+        <SavingsModal
+          key={`saving-${modalMode}-${editingItem?.id || 'new'}`}
+          isOpen={isSavingsModal}
+          onClose={() => {
+            setShowModal(false);
+            if (window.history.state?.modal) window.history.back();
+          }}
+          mode={modalMode}
+          editingItem={editingItem}
+          addToast={addToast}
+        />
+      )}
+
       {/* Delete Confirmation */}
       {confirmDelete && (
-        <div className="modal-overlay" onClick={() => {
-          setConfirmDelete(null);
-          if (window.history.state?.modal) window.history.back();
-        }}>
-          <div className="modal-content" style={{ paddingBottom: '24px' }} onClick={e => e.stopPropagation()}>
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <Trash2 size={48} />
-              <h3 style={{ fontSize: '24px', fontWeight: '900', marginTop: '16px' }}>Hapus?</h3>
-              <p>Yakin ingin menghapus ini?</p>
-            </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => {
-                setConfirmDelete(null);
-                if (window.history.state?.modal) window.history.back();
-              }} style={{ flex: 1, padding: '16px', background: '#fff', border: '2px solid #1A1D1E', borderRadius: '12px', fontWeight: '700', color: '#1A1D1E', cursor: 'pointer' }}>Batal</button>
-              <button onClick={() => {
-                handleDelete();
-                if (window.history.state?.modal) window.history.back();
-              }} style={{ flex: 1, padding: '16px', background: '#FFC0C0', border: '2px solid #1A1D1E', borderRadius: '12px', fontWeight: '700', boxShadow: '2px 2px 0px #1A1D1E', color: '#1A1D1E', cursor: 'pointer' }}>Hapus</button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          onConfirm={handleDelete}
+          onCancel={() => {
+            setConfirmDelete(null);
+            if (window.history.state?.modal) window.history.back();
+          }}
+        />
       )}
     </div>
   );

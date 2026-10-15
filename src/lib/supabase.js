@@ -537,3 +537,201 @@ export const syncBudget = async (userId, budget) => {
     return { error: err };
   }
 };
+
+// --- DEBTS ---
+export const fetchDebts = async (userId) => {
+  try {
+    if (!isSupabaseConfigured) return { data: [], error: null };
+    const { data, error } = await supabase
+      .from('debts')
+      .select('*, debt_payments(*)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      return {
+        data: data.map(d => ({
+          id: d.id,
+          type: d.type,
+          personName: d.person_name,
+          totalAmount: parseFloat(d.total_amount),
+          paidAmount: parseFloat(d.paid_amount || 0),
+          dueDate: d.due_date,
+          notes: d.notes,
+          status: d.status,
+          createdAt: d.created_at,
+          payments: (d.debt_payments || []).map(p => ({
+            id: p.id,
+            amount: parseFloat(p.amount),
+            notes: p.notes,
+            createdAt: p.created_at
+          }))
+        })),
+        error
+      };
+    }
+    return { data: [], error };
+  } catch (err) {
+    return { data: [], error: err };
+  }
+};
+
+export const createDebt = async (userId, debt) => {
+  try {
+    if (!isSupabaseConfigured) return { data: null, error: null };
+    const { data, error } = await supabase.from('debts').insert([{
+      user_id: userId,
+      type: debt.type,
+      person_name: debt.personName,
+      total_amount: debt.totalAmount,
+      paid_amount: 0,
+      due_date: debt.dueDate || null,
+      notes: debt.notes || '',
+      status: 'ongoing'
+    }]).select().single();
+
+    if (data) {
+      return {
+        data: { id: data.id, type: data.type, personName: data.person_name, totalAmount: parseFloat(data.total_amount), paidAmount: 0, status: data.status },
+        error
+      };
+    }
+    return { data: null, error };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+};
+
+export const updateDebt = async (id, updates) => {
+  try {
+    if (!isSupabaseConfigured) return { data: null, error: null };
+    const dbUpdates = {};
+    if (updates.paidAmount !== undefined) dbUpdates.paid_amount = updates.paidAmount;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+    if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
+
+    const { data, error } = await supabase.from('debts').update(dbUpdates).eq('id', id).select().single();
+    return { data, error };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+};
+
+export const deleteDebt = async (id) => {
+  try {
+    if (!isSupabaseConfigured) return { error: null };
+    return await supabase.from('debts').delete().eq('id', id);
+  } catch (err) {
+    return { error: err };
+  }
+};
+
+export const createDebtPayment = async (debtId, payment) => {
+  try {
+    if (!isSupabaseConfigured) return { data: null, error: null };
+
+    // 1. Insert payment record
+    const { data: payData, error: payError } = await supabase.from('debt_payments').insert([{
+      debt_id: debtId,
+      amount: payment.amount,
+      notes: payment.notes || ''
+    }]).select().single();
+
+    if (payError) return { data: null, error: payError };
+
+    // 2. Fetch current debt to recalculate
+    const { data: debt } = await supabase.from('debts').select('paid_amount, total_amount').eq('id', debtId).single();
+    if (debt) {
+      const newPaid = parseFloat(debt.paid_amount || 0) + payment.amount;
+      const status = newPaid >= parseFloat(debt.total_amount) ? 'paid' : 'partial';
+      await supabase.from('debts').update({ paid_amount: newPaid, status }).eq('id', debtId);
+    }
+
+    return { data: payData, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+};
+
+// --- SAVINGS ---
+export const fetchSavings = async (userId) => {
+  try {
+    if (!isSupabaseConfigured) return { data: [], error: null };
+    const { data, error } = await supabase
+      .from('savings')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      return {
+        data: data.map(s => ({
+          id: s.id,
+          name: s.name,
+          targetAmount: parseFloat(s.target_amount),
+          currentAmount: parseFloat(s.current_amount || 0),
+          icon: s.icon || 'Target',
+          color: s.color || '#D4F7E6',
+          deadline: s.deadline,
+          isCompleted: s.is_completed,
+          createdAt: s.created_at
+        })),
+        error
+      };
+    }
+    return { data: [], error };
+  } catch (err) {
+    return { data: [], error: err };
+  }
+};
+
+export const createSaving = async (userId, saving) => {
+  try {
+    if (!isSupabaseConfigured) return { data: null, error: null };
+    const { data, error } = await supabase.from('savings').insert([{
+      user_id: userId,
+      name: saving.name,
+      target_amount: saving.targetAmount,
+      current_amount: 0,
+      icon: saving.icon || 'Target',
+      color: saving.color || '#D4F7E6',
+      deadline: saving.deadline || null,
+      is_completed: false
+    }]).select().single();
+
+    if (data) {
+      return {
+        data: {
+          id: data.id, name: data.name,
+          targetAmount: parseFloat(data.target_amount),
+          currentAmount: 0, icon: data.icon, color: data.color,
+          deadline: data.deadline, isCompleted: data.is_completed
+        },
+        error
+      };
+    }
+    return { data: null, error };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+};
+
+export const updateSaving = async (id, updates) => {
+  try {
+    if (!isSupabaseConfigured) return { data: null, error: null };
+    const { data, error } = await supabase.from('savings').update(updates).eq('id', id).select().single();
+    return { data, error };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+};
+
+export const deleteSaving = async (id) => {
+  try {
+    if (!isSupabaseConfigured) return { error: null };
+    return await supabase.from('savings').delete().eq('id', id);
+  } catch (err) {
+    return { error: err };
+  }
+};

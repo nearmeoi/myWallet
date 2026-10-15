@@ -94,3 +94,68 @@ CREATE POLICY "Users can manage their own wallets" ON wallets FOR ALL USING (aut
 CREATE POLICY "Users can manage their own categories" ON categories FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage their own transactions" ON transactions FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage their own wishlist" ON wishlist FOR ALL USING (auth.uid() = user_id);
+
+-- ========================================================
+-- MIGRASI BARU: Tabel Hutang/Piutang & Tabungan
+-- ========================================================
+
+-- 6. Tabel Debts (Catatan Hutang & Piutang)
+CREATE TABLE IF NOT EXISTS debts (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES auth.users ON DELETE CASCADE,
+  type text CHECK (type IN ('owe', 'lend')), -- 'owe' = saya berhutang, 'lend' = saya meminjamkan
+  person_name text NOT NULL,
+  total_amount bigint NOT NULL,
+  paid_amount bigint DEFAULT 0,
+  due_date date,
+  notes text DEFAULT '',
+  status text DEFAULT 'ongoing' CHECK (status IN ('ongoing', 'partial', 'paid')),
+  created_at timestamptz DEFAULT now()
+);
+
+-- 7. Tabel Debt Payments (Riwayat Cicilan Hutang)
+CREATE TABLE IF NOT EXISTS debt_payments (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  debt_id uuid REFERENCES debts(id) ON DELETE CASCADE,
+  amount bigint NOT NULL,
+  notes text DEFAULT '',
+  created_at timestamptz DEFAULT now()
+);
+
+-- 8. Tabel Savings (Kantong Tabungan / Goals)
+CREATE TABLE IF NOT EXISTS savings (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES auth.users ON DELETE CASCADE,
+  name text NOT NULL,
+  target_amount bigint NOT NULL,
+  current_amount bigint DEFAULT 0,
+  icon text DEFAULT 'Target',
+  color text DEFAULT '#D4F7E6',
+  deadline date,
+  is_completed boolean DEFAULT false,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Enable RLS for new tables
+ALTER TABLE debts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE debt_payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE savings ENABLE ROW LEVEL SECURITY;
+
+-- Drop old policies if exist (safe re-run)
+DO $$
+BEGIN
+    DROP POLICY IF EXISTS "Users can manage their own debts" ON debts;
+    DROP POLICY IF EXISTS "Users can manage their own debt payments" ON debt_payments;
+    DROP POLICY IF EXISTS "Users can manage their own savings" ON savings;
+EXCEPTION
+    WHEN undefined_object THEN NULL;
+END $$;
+
+-- RLS Policies for new tables
+CREATE POLICY "Users can manage their own debts" ON debts FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can manage their own savings" ON savings FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can manage their own debt payments" ON debt_payments
+  FOR ALL USING (
+    auth.uid() = (SELECT user_id FROM debts WHERE id = debt_payments.debt_id)
+  );
+
