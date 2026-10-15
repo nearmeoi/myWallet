@@ -1,44 +1,74 @@
 import React, { useState } from 'react';
 import { X, Tag, Banknote, CreditCard, Smartphone, ChevronDown, ChevronUp } from 'lucide-react';
-import { useWallet } from '../../context/WalletContext';
+import { useWallet, findTransferTwin } from '../../context/WalletContext';
 import { AVAILABLE_ICONS, PRESET_COLORS } from '../../lib/constants';
 import { formatNumberInput, formatRupiah } from '../../lib/utils';
 
+const extractTransferNotes = (title) => {
+  if (!title) return '';
+  const colonIdx = title.indexOf(': ');
+  if (colonIdx !== -1) return title.substring(colonIdx + 2);
+  if (title.startsWith('Transfer ke ') || title.startsWith('Transfer dari ')) return '';
+  return title;
+};
+
 export default function ActionModal({ isOpen, onClose, mode: initialMode, type: initialType, editingItem, addToast }) {
   const { 
-    wallets, categories, 
+    wallets, categories, transactions,
     addTransaction, updateTransaction,
     addWallet, updateWallet,
     addCategory, updateCategory,
     addWishlistItem, updateWishlistItem,
     updateBudget, monthlyBudget,
-    addTransfer
+    addTransfer, updateTransfer
   } = useWallet();
 
   // Internal Mode State to allow switching
   const [currentMode, setCurrentMode] = useState(initialMode);
   const currentType = initialType;
 
+  // Find twin if editing a transfer
+  const transferTwin = (editingItem?.category === 'transfer' || initialMode === 'transfer')
+    ? findTransferTwin(editingItem, transactions)
+    : null;
+
   // Form State
   const [formTitle, setFormTitle] = useState(() => {
-    return editingItem ? (editingItem.title || editingItem.name || '') : '';
+    if (!editingItem) return '';
+    if (initialMode === 'transfer' || editingItem.category === 'transfer') {
+      return extractTransferNotes(editingItem.title);
+    }
+    return editingItem.title || editingItem.name || '';
   });
+
   const [formAmount, setFormAmount] = useState(() => {
     if (initialMode === 'budget') return monthlyBudget ? formatNumberInput(monthlyBudget) : '';
     if (editingItem) return formatNumberInput(editingItem.amount || editingItem.price || '');
     return '';
   });
+
   const [formCategory, setFormCategory] = useState(() => {
     if (editingItem?.category) return editingItem.category;
     const defaultCat = categories.find(c => c.type === initialType);
     return defaultCat?.id || '';
   });
+
   const [formWallet, setFormWallet] = useState(() => {
+    if (editingItem && (editingItem.category === 'transfer' || initialMode === 'transfer')) {
+      if (editingItem.type === 'expense') return editingItem.walletId || '';
+      return transferTwin?.walletId || '';
+    }
     if (editingItem?.walletId) return editingItem.walletId;
     return wallets.length > 0 ? wallets[0].id : '';
   });
+
   const [toWallet, setToWallet] = useState(() => {
-    return wallets.length > 1 ? wallets[1].id : '';
+    if (editingItem && (editingItem.category === 'transfer' || initialMode === 'transfer')) {
+      if (editingItem.type === 'income') return editingItem.walletId || '';
+      return transferTwin?.walletId || (wallets.find(w => w.id.toString() !== editingItem.walletId?.toString())?.id || '');
+    }
+    const otherWallet = wallets.find(w => w.id.toString() !== formWallet?.toString());
+    return otherWallet ? otherWallet.id : (wallets.length > 1 ? wallets[1].id : '');
   });
 
   // Category Form State
@@ -143,17 +173,27 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
       updateBudget(amount);
       addToast('Budget diperbarui!');
     } else if (currentMode === 'transfer') {
-      if (!formWallet || !toWallet || formWallet === toWallet) {
+      if (!formWallet || !toWallet || formWallet.toString() === toWallet.toString()) {
         addToast('Pilih dompet yang berbeda', 'error');
         return;
       }
-      addTransfer({
-        fromWalletId: formWallet,
-        toWalletId: toWallet,
-        amount,
-        notes: formTitle
-      });
-      addToast('Transfer Berhasil!');
+      if (editingItem) {
+        updateTransfer(editingItem.id, {
+          fromWalletId: formWallet,
+          toWalletId: toWallet,
+          amount,
+          notes: formTitle.trim()
+        });
+        addToast('Transfer diperbarui!');
+      } else {
+        addTransfer({
+          fromWalletId: formWallet,
+          toWalletId: toWallet,
+          amount,
+          notes: formTitle.trim()
+        });
+        addToast('Transfer Berhasil!');
+      }
     } else if (currentMode === 'wishlist') {
       const newItem = { name: formTitle, price: amount };
       if (editingItem) {
@@ -194,6 +234,7 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
             {currentMode === 'budget' && 'Set Budget'}
             {currentMode === 'wishlist' && (editingItem ? 'Edit Item' : 'New Item')}
             {currentMode === 'transaction' && (editingItem ? 'Edit Transaksi' : 'Transaksi Baru')}
+            {currentMode === 'transfer' && (editingItem ? 'Edit Transfer' : 'Transfer Antar Dompet')}
             {currentMode === 'category' && (editingItem ? 'Edit Kategori' : 'Kategori Baru')}
             {currentMode === 'wallet' && (editingItem ? 'Edit Dompet' : 'Dompet Baru')}
           </h3>

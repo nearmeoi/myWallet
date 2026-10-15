@@ -61,49 +61,29 @@ const HomeTab = ({
 
 
     const filteredTransactions = transactions.filter(t => {
-
-
-
       const tDate = new Date(t.timestamp);
+      const isTransfer = t.category === 'transfer';
 
-
-
-      const matchesType = filterType === 'all' || t.type === filterType;
-
-
+      // Type matching
+      let matchesType = false;
+      if (filterType === 'all') {
+        matchesType = true;
+      } else if (filterType === 'transfer') {
+        matchesType = isTransfer;
+      } else if (filterType === 'income') {
+        matchesType = selectedWallet === 'all' ? (t.type === 'income' && !isTransfer) : (t.type === 'income');
+      } else if (filterType === 'expense') {
+        matchesType = selectedWallet === 'all' ? (t.type === 'expense' && !isTransfer) : (t.type === 'expense');
+      }
 
       const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase());
-
-
-
       const matchesWallet = selectedWallet === 'all' || t.walletId?.toString() === selectedWallet.toString();
-
-
-
       const matchesDate = tDate.getMonth() === selectedMonth && tDate.getFullYear() === selectedYear;
 
-
-
-      
-
-
-
-      // Logic to show only 1 entry for transfers in "All Wallets" view
-
-
-
-      const isTransferIncome = selectedWallet === 'all' && t.category === 'transfer' && t.type === 'income';
-
-
-
-      
-
-
+      // In "all wallets" view, hide the income twin so only 1 card per transfer is displayed
+      const isTransferIncome = selectedWallet === 'all' && isTransfer && t.type === 'income';
 
       return matchesType && matchesSearch && matchesWallet && matchesDate && !isTransferIncome;
-
-
-
     });
 
 
@@ -353,28 +333,23 @@ const HomeTab = ({
 
             <label style={{ fontSize: '10px', fontWeight: '800', marginBottom: '4px', display: 'block' }}>TIPE</label>
 
-            <div style={{ display: 'flex', gap: '8px' }}>
-
-              {['all', 'income', 'expense'].map(type => (
-
-                <button key={type} onClick={() => setFilterType(type)} style={{
-
-                  flex: 1, padding: '6px', borderRadius: '6px', fontSize: '11px', fontWeight: '700',
-
-                  background: filterType === type ? '#1A1D1E' : '#FFFFFF',
-
-                  color: filterType === type ? '#FFFFFF' : '#1A1D1E',
-
-                  border: '1px solid #1A1D1E'
-
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {[
+                { key: 'all', label: 'Semua' },
+                { key: 'income', label: 'Masuk' },
+                { key: 'expense', label: 'Keluar' },
+                { key: 'transfer', label: 'Transfer' }
+              ].map(t => (
+                <button key={t.key} onClick={() => setFilterType(t.key)} style={{
+                  flex: 1, padding: '6px 4px', borderRadius: '6px', fontSize: '11px', fontWeight: '700',
+                  background: filterType === t.key ? '#1A1D1E' : '#FFFFFF',
+                  color: filterType === t.key ? '#FFFFFF' : '#1A1D1E',
+                  border: '1px solid #1A1D1E',
+                  cursor: 'pointer'
                 }}>
-
-                  {type === 'all' ? 'Semua' : (type === 'income' ? 'Masuk' : 'Keluar')}
-
+                  {t.label}
                 </button>
-
               ))}
-
             </div>
 
           </div>

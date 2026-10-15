@@ -48,10 +48,10 @@ const TransactionCard = ({ transaction, category, onDelete, onEdit }) => {
             <div style={{ textAlign: 'right' }}>
                 <p style={{
                     fontSize: '16px', fontWeight: '900',
-                    color: '#1A1D1E',
+                    color: isTransfer ? '#7C3AED' : (isIncome ? '#16A34A' : '#1A1D1E'),
                     marginBottom: '4px'
                 }}>
-                    {isIncome ? '+' : '-'}{Math.abs(amount).toLocaleString('id-ID')}
+                    {isTransfer ? '⇄ ' : (isIncome ? '+' : '-')}{Math.abs(amount).toLocaleString('id-ID')}
                 </p>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                     <button onClick={(e) => { e.stopPropagation(); onEdit(); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>

@@ -266,7 +266,7 @@ function App() {
               wallets={wallets}
               onOpenModal={openModal}
               onDelete={(id) => triggerDelete(id, 'transaction')}
-              onEdit={(item) => openModal('transaction', item.type, item)}
+              onEdit={(item) => openModal(item.category === 'transfer' ? 'transfer' : 'transaction', item.type, item)}
             />
           )}
 
