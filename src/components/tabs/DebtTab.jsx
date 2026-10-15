@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, CheckCircle, CreditCard, Users } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, CreditCard, Users, Bell, AlertCircle, LoaderCircle } from 'lucide-react';
 import { useDebt } from '../../context/DebtContext';
 import { formatRupiah } from '../../lib/utils';
 
-export default function DebtTab({ onOpenModal, onDelete }) {
+export default function DebtTab({ user, onRequireAuth, onOpenModal, onDelete, addToast }) {
   const { debts, totalOwed, totalLent } = useDebt();
   const [activeTab, setActiveTab] = useState('owe'); // 'owe' = hutang, 'lend' = piutang
+  const [sendingDebtId, setSendingDebtId] = useState(null);
 
   const filtered = debts.filter(d => d.type === activeTab);
 
@@ -21,8 +22,91 @@ export default function DebtTab({ onOpenModal, onDelete }) {
     return 'Belum Bayar';
   };
 
+  // Helper to calculate days remaining until deadline
+  const getDaysRemaining = (dueDate) => {
+    if (!dueDate) return null;
+    const due = new Date(dueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+    const diffTime = due - today;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  // Debts due in <= 3 days or overdue
+  const dueSoonDebts = debts.filter(d => {
+    if (d.status === 'paid' || !d.dueDate) return false;
+    const days = getDaysRemaining(d.dueDate);
+    return days !== null && days <= 3;
+  });
+
+  // Send debt reminder email via /api/send-debt-reminder
+  const handleSendReminder = async (debt) => {
+    if (!user) {
+      if (addToast) addToast('Silakan login terlebih dahulu untuk menggunakan fitur pengingat email.', 'info');
+      if (onRequireAuth) onRequireAuth();
+      return;
+    }
+
+    setSendingDebtId(debt.id);
+    try {
+      const remaining = debt.totalAmount - (debt.paidAmount || 0);
+      const res = await fetch('/api/send-debt-reminder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          toEmail: user.email,
+          personName: debt.personName,
+          amount: debt.totalAmount,
+          remaining,
+          dueDate: debt.dueDate,
+          type: debt.type,
+          notes: debt.notes
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal mengirim email pengingat.');
+      }
+
+      if (addToast) addToast(data.message || `Pengingat berhasil dikirim ke ${user.email}!`, 'success');
+    } catch (err) {
+      if (addToast) addToast(err.message || 'Gagal mengirim email pengingat.', 'error');
+    } finally {
+      setSendingDebtId(null);
+    }
+  };
+
   return (
     <>
+      {/* Guest Mode Notice */}
+      {!user && (
+        <div style={{
+          padding: '12px 14px', background: '#FEF9C3', border: '2px solid #1A1D1E',
+          borderRadius: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', gap: '10px', boxShadow: '2px 2px 0px #1A1D1E'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertCircle size={18} color="#1A1D1E" />
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: '800', margin: 0 }}>Mode Tamu</p>
+              <p style={{ fontSize: '11px', color: '#666', margin: 0 }}>Login untuk mencatat hutang & piutang</p>
+            </div>
+          </div>
+          <button
+            onClick={onRequireAuth}
+            style={{
+              padding: '6px 12px', background: '#1A1D1E', color: '#FFFFFF',
+              border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '800',
+              fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap'
+            }}
+          >
+            Login / Daftar
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ fontSize: '28px', fontWeight: '900' }}>Hutang & Piutang.</h2>
@@ -37,6 +121,24 @@ export default function DebtTab({ onOpenModal, onDelete }) {
           <Plus size={24} />
         </button>
       </div>
+
+      {/* Due Soon Warning Banner */}
+      {dueSoonDebts.length > 0 && (
+        <div className="card" style={{
+          background: '#FFC0C0', border: '2px solid #1A1D1E', padding: '14px',
+          marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px'
+        }}>
+          <AlertCircle size={24} color="#EF4444" style={{ flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: '13px', fontWeight: '800', color: '#1A1D1E', margin: 0 }}>
+              Perhatian: {dueSoonDebts.length} catatan mendekati / lewat jatuh tempo!
+            </p>
+            <p style={{ fontSize: '11px', color: '#444', margin: '2px 0 0 0' }}>
+              Gunakan tombol lonceng 🔔 pada kartu di bawah untuk mengirim notifikasi pengingat ke email Anda.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
@@ -82,6 +184,10 @@ export default function DebtTab({ onOpenModal, onDelete }) {
             const remaining = debt.totalAmount - (debt.paidAmount || 0);
             const progress = debt.totalAmount > 0 ? ((debt.paidAmount || 0) / debt.totalAmount) * 100 : 0;
             const isPaid = debt.status === 'paid';
+            const daysRemaining = getDaysRemaining(debt.dueDate);
+            const isDueSoon = !isPaid && daysRemaining !== null && daysRemaining <= 3;
+            const isOverdue = !isPaid && daysRemaining !== null && daysRemaining < 0;
+
             return (
               <div
                 key={debt.id}
@@ -90,7 +196,7 @@ export default function DebtTab({ onOpenModal, onDelete }) {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
                       <h3 style={{ fontSize: '16px', fontWeight: '800' }}>{debt.personName}</h3>
                       <span style={{
                         fontSize: '10px', fontWeight: '700', padding: '2px 8px',
@@ -98,10 +204,27 @@ export default function DebtTab({ onOpenModal, onDelete }) {
                       }}>
                         {statusLabel(debt.status)}
                       </span>
+
+                      {/* Deadline Status Badge */}
+                      {!isPaid && debt.dueDate && (
+                        <span style={{
+                          fontSize: '10px', fontWeight: '800', padding: '2px 8px', borderRadius: '20px',
+                          border: '1px solid #1A1D1E',
+                          background: isOverdue ? '#FFC0C0' : isDueSoon ? '#FEF9C3' : '#F3F4F6',
+                          color: isOverdue ? '#EF4444' : '#1A1D1E'
+                        }}>
+                          {isOverdue 
+                            ? `Lewat ${Math.abs(daysRemaining)} hari!` 
+                            : daysRemaining === 0 
+                              ? 'Jatuh tempo hari ini!' 
+                              : `${daysRemaining} hari lagi`}
+                        </span>
+                      )}
                     </div>
+
                     {debt.notes && <p style={{ fontSize: '12px', color: '#666' }}>{debt.notes}</p>}
                     {debt.dueDate && (
-                      <p style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>
+                      <p style={{ fontSize: '12px', color: isOverdue ? '#EF4444' : '#666', marginTop: '2px', fontWeight: isOverdue ? '700' : '500' }}>
                         Jatuh tempo: {new Date(debt.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
                     )}
@@ -144,6 +267,28 @@ export default function DebtTab({ onOpenModal, onDelete }) {
                     >
                       <CreditCard size={14} /> Bayar
                     </button>
+
+                    {/* Email Reminder Button */}
+                    <button
+                      onClick={() => handleSendReminder(debt)}
+                      disabled={sendingDebtId === debt.id}
+                      title="Kirim pengingat email ke alamat akun Anda"
+                      className="btn-pressed-blue"
+                      style={{
+                        padding: '8px 12px', background: isDueSoon ? '#FEF9C3' : '#FFFFFF', border: '2px solid #1A1D1E',
+                        borderRadius: '8px', fontWeight: '700', fontSize: '12px',
+                        boxShadow: '2px 2px 0px #1A1D1E', cursor: sendingDebtId === debt.id ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px'
+                      }}
+                    >
+                      {sendingDebtId === debt.id ? (
+                        <LoaderCircle size={14} className="animate-spin" />
+                      ) : (
+                        <Bell size={14} color={isDueSoon ? '#D97706' : '#1A1D1E'} />
+                      )}
+                      <span>Ingatkan</span>
+                    </button>
+
                     <button
                       onClick={() => onDelete(debt.id, 'debt')}
                       style={{
@@ -156,6 +301,7 @@ export default function DebtTab({ onOpenModal, onDelete }) {
                     </button>
                   </div>
                 )}
+
                 {isPaid && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#22c55e' }}>
                     <CheckCircle size={16} />

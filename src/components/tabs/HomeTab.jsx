@@ -9,12 +9,14 @@ import { formatDate, formatRupiah } from '../../lib/utils';
 import { useDebt } from '../../context/DebtContext';
 
 const HomeTab = ({ 
+  user,
   balance, 
   transactions = [], 
   categories = [], 
   wallets = [], 
   onOpenModal, 
   onOpenSummary,
+  onRequireAuth,
   onDelete, 
   onEdit 
 }) => {
@@ -78,6 +80,33 @@ const HomeTab = ({
 
   return (
     <>
+      {/* Guest Mode Notice */}
+      {!user && (
+        <div style={{
+          padding: '12px 14px', background: '#FEF9C3', border: '2px solid #1A1D1E',
+          borderRadius: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', gap: '10px', boxShadow: '2px 2px 0px #1A1D1E'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertCircle size={18} color="#1A1D1E" />
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: '800', margin: 0 }}>Mode Tamu</p>
+              <p style={{ fontSize: '11px', color: '#666', margin: 0 }}>Login untuk mencatat transaksi Anda</p>
+            </div>
+          </div>
+          <button
+            onClick={onRequireAuth}
+            style={{
+              padding: '6px 12px', background: '#1A1D1E', color: '#FFFFFF',
+              border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '800',
+              fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap'
+            }}
+          >
+            Login / Daftar
+          </button>
+        </div>
+      )}
+
       {/* TOTAL SALDO CARD */}
       <section className="card" style={{ background: '#BBEFFA', position: 'relative', overflow: 'hidden' }}>
         {/* Yellow circle ornament (preserved) */}

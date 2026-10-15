@@ -1,14 +1,41 @@
 import React from 'react';
-import { Plus, Trash2, Target, PiggyBank } from 'lucide-react';
+import { Plus, Trash2, Target, PiggyBank, AlertCircle } from 'lucide-react';
 import { useSavings } from '../../context/SavingsContext';
 import { formatRupiah } from '../../lib/utils';
 import { PRESET_COLORS, AVAILABLE_ICONS } from '../../lib/constants';
 
-export default function SavingsTab({ onOpenModal, onDelete }) {
+export default function SavingsTab({ user, onRequireAuth, onOpenModal, onDelete }) {
   const { savings, totalSaved } = useSavings();
 
   return (
     <>
+      {/* Guest Mode Notice */}
+      {!user && (
+        <div style={{
+          padding: '12px 14px', background: '#FEF9C3', border: '2px solid #1A1D1E',
+          borderRadius: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', gap: '10px', boxShadow: '2px 2px 0px #1A1D1E'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertCircle size={18} color="#1A1D1E" />
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: '800', margin: 0 }}>Mode Tamu</p>
+              <p style={{ fontSize: '11px', color: '#666', margin: 0 }}>Login untuk membuat kantong tabungan</p>
+            </div>
+          </div>
+          <button
+            onClick={onRequireAuth}
+            style={{
+              padding: '6px 12px', background: '#1A1D1E', color: '#FFFFFF',
+              border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '800',
+              fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap'
+            }}
+          >
+            Login / Daftar
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ fontSize: '28px', fontWeight: '900' }}>Tabungan.</h2>

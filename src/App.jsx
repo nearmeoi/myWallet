@@ -231,6 +231,11 @@ function App() {
 
   // Modal Helpers
   const openModal = (mode, type = 'income', item = null) => {
+    if (!user) {
+      addToast('Silakan login terlebih dahulu untuk menambah atau mengedit data.', 'info');
+      handleTabChange('account');
+      return;
+    }
     setModalMode(mode);
     setModalType(type);
     setEditingItem(item);
@@ -239,6 +244,12 @@ function App() {
 
   // Delete Handler
   const handleDelete = () => {
+    if (!user) {
+      addToast('Silakan login terlebih dahulu.', 'info');
+      handleTabChange('account');
+      setConfirmDelete(null);
+      return;
+    }
     if (!confirmDelete) return;
     const { id, type } = confirmDelete;
 
@@ -270,6 +281,11 @@ function App() {
   };
 
   const triggerDelete = (id, type) => {
+    if (!user) {
+      addToast('Silakan login terlebih dahulu untuk menghapus data.', 'info');
+      handleTabChange('account');
+      return;
+    }
     setConfirmDelete({ id, type });
   };
 
@@ -306,12 +322,14 @@ function App() {
         <main style={{ paddingBottom: '20px' }}>
           {activeTab === 'home' && (
             <HomeTab 
+              user={user}
               balance={displayBalance}
               transactions={transactions}
               categories={categories}
               wallets={wallets}
               onOpenModal={openModal}
               onOpenSummary={() => handleTabChange('wallet')}
+              onRequireAuth={() => handleTabChange('account')}
               onDelete={(id) => triggerDelete(id, 'transaction')}
               onEdit={(item) => openModal(item.category === 'transfer' ? 'transfer' : 'transaction', item.type, item)}
             />
@@ -319,14 +337,19 @@ function App() {
 
           {activeTab === 'debt' && (
             <DebtTab
+              user={user}
               onOpenModal={openModal}
+              onRequireAuth={() => handleTabChange('account')}
               onDelete={(id, type) => triggerDelete(id, type)}
+              addToast={addToast}
             />
           )}
 
           {activeTab === 'savings' && (
             <SavingsTab
+              user={user}
               onOpenModal={openModal}
+              onRequireAuth={() => handleTabChange('account')}
               onDelete={(id, type) => triggerDelete(id, type)}
             />
           )}
