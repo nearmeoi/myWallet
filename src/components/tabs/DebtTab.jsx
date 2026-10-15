@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, CheckCircle, CreditCard, Users, Bell, AlertCircle, LoaderCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { useDebt } from '../../context/DebtContext';
 import { formatRupiah } from '../../lib/utils';
 
 export default function DebtTab({ user, onRequireAuth, onOpenModal, onDelete, addToast }) {
+  const { session } = useAuth();
   const { debts, totalOwed, totalLent } = useDebt();
   const [activeTab, setActiveTab] = useState('owe'); // 'owe' = hutang, 'lend' = piutang
   const [sendingDebtId, setSendingDebtId] = useState(null);
@@ -51,11 +53,18 @@ export default function DebtTab({ user, onRequireAuth, onOpenModal, onDelete, ad
     setSendingDebtId(debt.id);
     try {
       const remaining = debt.totalAmount - (debt.paidAmount || 0);
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const res = await fetch('/api/send-debt-reminder', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
-          toEmail: user.email,
           personName: debt.personName,
           amount: debt.totalAmount,
           remaining,

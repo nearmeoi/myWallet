@@ -17,6 +17,7 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export function AuthProvider({ children }) {
     try {
       const res = onAuthStateChange((event, session) => {
         setUser(session?.user || null);
+        setSession(session || null);
         setLoading(false);
       });
       subscription = res?.data?.subscription;
@@ -62,6 +64,7 @@ export function AuthProvider({ children }) {
   const signOut = async () => {
     await supabaseSignOut();
     setUser(null);
+    setSession(null);
   };
 
   const resendConfirmation = async (email) => {
@@ -89,6 +92,7 @@ export function AuthProvider({ children }) {
 
   const value = {
     user,
+    session,
     loading,
     signIn,
     signUp,
