@@ -68,19 +68,22 @@ function App() {
     document.body.scrollTop = 0;
   }, [activeTab]);
 
+  const [returnTab, setReturnTab] = useState('home');
+
   // Back button handling for modals and sub-tabs
   useEffect(() => {
-    const handlePopState = () => {
+    const handlePopState = (event) => {
       if (showModal || confirmDelete) {
         setShowModal(false);
         setConfirmDelete(null);
       } else if (activeTab === 'wallet' || activeTab === 'categories') {
-        setActiveTab('account');
+        const from = event.state?.from || returnTab || 'home';
+        setActiveTab(from);
       }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [showModal, confirmDelete, activeTab]);
+  }, [showModal, confirmDelete, activeTab, returnTab]);
 
   useEffect(() => {
     if (showModal || confirmDelete) {
@@ -89,8 +92,9 @@ function App() {
   }, [showModal, confirmDelete]);
 
   const handleTabChange = (newTab) => {
-    if ((newTab === 'wallet' || newTab === 'categories') && activeTab === 'account') {
-      window.history.pushState({ subTab: newTab }, '');
+    if (newTab === 'wallet' || newTab === 'categories') {
+      setReturnTab(activeTab);
+      window.history.pushState({ subTab: newTab, from: activeTab }, '');
     }
     setActiveTab(newTab);
   };
@@ -99,7 +103,7 @@ function App() {
     if (window.history.state?.subTab) {
       window.history.back();
     } else {
-      setActiveTab('account');
+      setActiveTab(returnTab || 'home');
     }
   };
 
@@ -306,9 +310,8 @@ function App() {
               transactions={transactions}
               categories={categories}
               wallets={wallets}
-              monthlyBudget={monthlyBudget}
-              budgetProgress={budgetProgress}
               onOpenModal={openModal}
+              onOpenSummary={() => handleTabChange('wallet')}
               onDelete={(id) => triggerDelete(id, 'transaction')}
               onEdit={(item) => openModal(item.category === 'transfer' ? 'transfer' : 'transaction', item.type, item)}
             />
@@ -332,10 +335,8 @@ function App() {
             <WalletTab 
               monthlyBudget={monthlyBudget}
               budgetProgress={budgetProgress}
-              totalIncome={totalIncome}
-              totalExpense={totalExpense}
               wallets={wallets}
-              expenseCategories={expenseCategories}
+              categories={categories}
               transactions={transactions}
               onOpenModal={openModal}
               onBack={handleBackFromSubTab}

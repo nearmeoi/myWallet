@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   ArrowDownLeft, ArrowUpRight, MoreHorizontal, ArrowLeftRight, 
-  Search, Filter, AlertCircle, PieChart, ArrowLeft
+  Search, Filter, AlertCircle, PieChart
 } from 'lucide-react';
 import TransactionCard from '../TransactionCard';
 import { AVAILABLE_ICONS } from '../../lib/constants';
@@ -13,16 +13,12 @@ const HomeTab = ({
   transactions = [], 
   categories = [], 
   wallets = [], 
-  monthlyBudget = 0,
-  budgetProgress = 0,
   onOpenModal, 
+  onOpenSummary,
   onDelete, 
   onEdit 
 }) => {
   const { totalOwed } = useDebt();
-
-  // Show summary/analytics view or normal home view
-  const [showSummary, setShowSummary] = useState(false);
 
   const [showAllTransactions, setShowAllTransactions] = useState(false);
   const [filterType, setFilterType] = useState('all');
@@ -50,76 +46,6 @@ const HomeTab = ({
     }
     return categories.find(c => c.id === id) || { name: 'Lainnya', icon: 'MoreHorizontal', bg: '#F3F4F6' };
   };
-
-  // Transactions for selected period
-  const monthTransactions = transactions.filter(t => {
-    const d = new Date(t.timestamp);
-    return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
-  });
-
-  const monthIncome = monthTransactions
-    .filter(t => t.type === 'income' && t.category !== 'transfer')
-    .reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
-
-  const monthExpense = monthTransactions
-    .filter(t => t.type === 'expense' && t.category !== 'transfer')
-    .reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
-
-  const monthNet = monthIncome - monthExpense;
-
-  // Breakdown Expense by Category
-  const expenseByCategory = {};
-  monthTransactions
-    .filter(t => t.type === 'expense' && t.category !== 'transfer')
-    .forEach(t => {
-      const catId = t.category || 'other_expense';
-      expenseByCategory[catId] = (expenseByCategory[catId] || 0) + parseFloat(t.amount || 0);
-    });
-
-  const sortedExpenseCategories = Object.keys(expenseByCategory)
-    .map(catId => {
-      const cat = getCategoryById(catId);
-      const amount = expenseByCategory[catId];
-      const percentage = monthExpense > 0 ? (amount / monthExpense) * 100 : 0;
-      return { ...cat, id: catId, amount, percentage };
-    })
-    .sort((a, b) => b.amount - a.amount);
-
-  // Breakdown Income by Category
-  const incomeByCategory = {};
-  monthTransactions
-    .filter(t => t.type === 'income' && t.category !== 'transfer')
-    .forEach(t => {
-      const catId = t.category || 'other_income';
-      incomeByCategory[catId] = (incomeByCategory[catId] || 0) + parseFloat(t.amount || 0);
-    });
-
-  const sortedIncomeCategories = Object.keys(incomeByCategory)
-    .map(catId => {
-      const cat = getCategoryById(catId);
-      const amount = incomeByCategory[catId];
-      const percentage = monthIncome > 0 ? (amount / monthIncome) * 100 : 0;
-      return { ...cat, id: catId, amount, percentage };
-    })
-    .sort((a, b) => b.amount - a.amount);
-
-  // Breakdown Expense by Wallet
-  const expenseByWallet = {};
-  monthTransactions
-    .filter(t => t.type === 'expense' && t.category !== 'transfer' && t.walletId)
-    .forEach(t => {
-      const wId = t.walletId;
-      expenseByWallet[wId] = (expenseByWallet[wId] || 0) + parseFloat(t.amount || 0);
-    });
-
-  const sortedWalletExpenses = Object.keys(expenseByWallet)
-    .map(wId => {
-      const wallet = wallets.find(w => w.id?.toString() === wId.toString()) || { name: 'Dompet Lain', color: '#E5E7EB' };
-      const amount = expenseByWallet[wId];
-      const percentage = monthExpense > 0 ? (amount / monthExpense) * 100 : 0;
-      return { ...wallet, id: wId, amount, percentage };
-    })
-    .sort((a, b) => b.amount - a.amount);
 
   // Filtered transactions for the list view
   const filteredTransactions = transactions.filter(t => {
@@ -150,269 +76,16 @@ const HomeTab = ({
     return groups;
   }, {});
 
-  // =========================================================================
-  // SUMMARY & ANALYTICS VIEW (Opened via PieChart icon on Total Saldo)
-  // =========================================================================
-  if (showSummary) {
-    return (
-      <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {/* Back Button */}
-        <div>
-          <button
-            onClick={() => setShowSummary(false)}
-            className="btn-pressed-blue"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '6px',
-              padding: '8px 14px', background: '#FFFFFF', border: '2px solid #1A1D1E',
-              borderRadius: '8px', fontWeight: '800', fontSize: '13px',
-              boxShadow: '2px 2px 0px #1A1D1E', cursor: 'pointer', color: '#1A1D1E'
-            }}
-          >
-            <ArrowLeft size={16} /> Kembali ke Beranda
-          </button>
-        </div>
-
-        <h2 style={{ fontSize: '28px', fontWeight: '900', margin: '4px 0 0 0' }}>Ringkasan & Grafik.</h2>
-
-        {/* Period Selector Card */}
-        <div className="card" style={{ padding: '14px', margin: 0, background: '#FFFFFF' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-            <span style={{ fontSize: '12px', fontWeight: '800' }}>PERIODE LAPORAN:</span>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <select 
-                value={selectedMonth} 
-                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                style={{ padding: '6px 10px', borderRadius: '8px', border: '2px solid #1A1D1E', fontWeight: '700', fontSize: '12px' }}
-              >
-                {months.map((m, i) => <option key={m} value={i}>{m}</option>)}
-              </select>
-              <select 
-                value={selectedYear} 
-                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                style={{ padding: '6px 10px', borderRadius: '8px', border: '2px solid #1A1D1E', fontWeight: '700', fontSize: '12px' }}
-              >
-                {years.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Cashflow Net Summary Card */}
-        <div className="card" style={{ padding: '18px', margin: 0, background: '#FFFFFF' }}>
-          <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#666', marginBottom: '12px', textTransform: 'uppercase' }}>
-            Arus Kas ({months[selectedMonth]} {selectedYear})
-          </h4>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-            <div>
-              <p style={{ fontSize: '11px', fontWeight: '700', color: '#16a34a' }}>TOTAL PEMASUKAN</p>
-              <p style={{ fontSize: '18px', fontWeight: '900', color: '#16a34a' }}>+{formatRupiah(monthIncome)}</p>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ fontSize: '11px', fontWeight: '700', color: '#dc2626' }}>TOTAL PENGELUARAN</p>
-              <p style={{ fontSize: '18px', fontWeight: '900', color: '#dc2626' }}>-{formatRupiah(monthExpense)}</p>
-            </div>
-          </div>
-
-          <div style={{ 
-            padding: '12px', borderRadius: '10px', 
-            background: monthNet >= 0 ? '#D4F7E6' : '#FFC0C0', 
-            border: '2px solid #1A1D1E',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-          }}>
-            <div>
-              <p style={{ fontSize: '11px', fontWeight: '800' }}>
-                {monthNet >= 0 ? 'SURPLUS / TABUNGAN BERSIH' : 'DEFISIT PENGELUARAN'}
-              </p>
-              <p style={{ fontSize: '18px', fontWeight: '900' }}>
-                {monthNet >= 0 ? `+${formatRupiah(monthNet)}` : `-${formatRupiah(Math.abs(monthNet))}`}
-              </p>
-            </div>
-            <span style={{ 
-              fontSize: '11px', fontWeight: '800', padding: '4px 8px', 
-              background: '#FFFFFF', border: '1px solid #1A1D1E', borderRadius: '6px' 
-            }}>
-              {monthIncome > 0 ? `${Math.round((monthExpense / monthIncome) * 100)}% Terpakai` : '0%'}
-            </span>
-          </div>
-        </div>
-
-        {/* Budget Status Card */}
-        <div className="card" style={{ padding: '18px', margin: 0, background: '#FEF9C3' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <div>
-              <span style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase' }}>BUDGET BULANAN</span>
-              <h4 style={{ fontSize: '18px', fontWeight: '900' }}>
-                {monthlyBudget > 0 ? formatRupiah(monthlyBudget) : 'Belum Diatur'}
-              </h4>
-            </div>
-            <button
-              onClick={() => onOpenModal('budget')}
-              style={{
-                padding: '6px 12px', background: '#FFFFFF', border: '2px solid #1A1D1E',
-                borderRadius: '8px', fontSize: '11px', fontWeight: '800', cursor: 'pointer',
-                boxShadow: '2px 2px 0px #1A1D1E'
-              }}
-            >
-              {monthlyBudget > 0 ? 'Ubah Budget' : '+ Pasang Budget'}
-            </button>
-          </div>
-
-          {monthlyBudget > 0 && (
-            <>
-              <div style={{ height: '12px', background: '#FFFFFF', border: '2px solid #1A1D1E', borderRadius: '6px', overflow: 'hidden', marginTop: '10px' }}>
-                <div style={{
-                  height: '100%',
-                  width: `${Math.min((monthExpense / monthlyBudget) * 100, 100)}%`,
-                  background: monthExpense > monthlyBudget ? '#EF4444' : '#1A1D1E',
-                  transition: 'width 0.4s ease'
-                }} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '11px', fontWeight: '700' }}>
-                <span>{Math.round((monthExpense / monthlyBudget) * 100)}% terpakai</span>
-                <span style={{ color: monthExpense > monthlyBudget ? '#EF4444' : '#1A1D1E' }}>
-                  {monthExpense > monthlyBudget ? `Overbudget ${formatRupiah(monthExpense - monthlyBudget)}!` : `Sisa ${formatRupiah(monthlyBudget - monthExpense)}`}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Category Expense Breakdown */}
-        <div className="card" style={{ padding: '18px', margin: 0, background: '#FFFFFF' }}>
-          <h4 style={{ fontSize: '14px', fontWeight: '800', marginBottom: '14px' }}>
-            Pengeluaran Berdasarkan Kategori.
-          </h4>
-
-          {sortedExpenseCategories.length === 0 ? (
-            <p style={{ fontSize: '13px', color: '#666', textAlign: 'center', padding: '16px' }}>
-              Belum ada pengeluaran di periode ini.
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {sortedExpenseCategories.map(cat => {
-                const IconComp = AVAILABLE_ICONS[cat.icon] || MoreHorizontal;
-                return (
-                  <div key={cat.id}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{
-                          width: '28px', height: '28px', background: cat.bg || '#FFC0C0',
-                          border: '1px solid #1A1D1E', borderRadius: '6px',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                          <IconComp size={16} />
-                        </div>
-                        <span style={{ fontSize: '13px', fontWeight: '800' }}>{cat.name}</span>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <span style={{ fontSize: '13px', fontWeight: '900' }}>{formatRupiah(cat.amount)}</span>
-                        <span style={{ fontSize: '11px', color: '#666', fontWeight: '700', marginLeft: '6px' }}>
-                          ({cat.percentage.toFixed(1)}%)
-                        </span>
-                      </div>
-                    </div>
-
-                    <div style={{ height: '8px', background: '#F3F4F6', border: '1px solid #1A1D1E', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{
-                        height: '100%',
-                        width: `${Math.min(cat.percentage, 100)}%`,
-                        background: cat.bg || '#FFC0C0'
-                      }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Category Income Breakdown */}
-        {sortedIncomeCategories.length > 0 && (
-          <div className="card" style={{ padding: '18px', margin: 0, background: '#FFFFFF' }}>
-            <h4 style={{ fontSize: '14px', fontWeight: '800', marginBottom: '14px' }}>
-              Sumber Pemasukan.
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {sortedIncomeCategories.map(cat => {
-                const IconComp = AVAILABLE_ICONS[cat.icon] || MoreHorizontal;
-                return (
-                  <div key={cat.id}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{
-                          width: '28px', height: '28px', background: cat.bg || '#D4F7E6',
-                          border: '1px solid #1A1D1E', borderRadius: '6px',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                          <IconComp size={16} />
-                        </div>
-                        <span style={{ fontSize: '13px', fontWeight: '800' }}>{cat.name}</span>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <span style={{ fontSize: '13px', fontWeight: '900', color: '#16a34a' }}>+{formatRupiah(cat.amount)}</span>
-                        <span style={{ fontSize: '11px', color: '#666', fontWeight: '700', marginLeft: '6px' }}>
-                          ({cat.percentage.toFixed(1)}%)
-                        </span>
-                      </div>
-                    </div>
-
-                    <div style={{ height: '8px', background: '#F3F4F6', border: '1px solid #1A1D1E', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{
-                        height: '100%',
-                        width: `${Math.min(cat.percentage, 100)}%`,
-                        background: cat.bg || '#D4F7E6'
-                      }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Expense per Wallet Breakdown */}
-        {sortedWalletExpenses.length > 0 && (
-          <div className="card" style={{ padding: '18px', margin: 0, background: '#FFFFFF' }}>
-            <h4 style={{ fontSize: '14px', fontWeight: '800', marginBottom: '14px' }}>
-              Pengeluaran per Dompet / Rekening.
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {sortedWalletExpenses.map(w => (
-                <div key={w.id} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '10px 12px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: w.color || '#1A1D1E', border: '1px solid #1A1D1E' }} />
-                    <span style={{ fontSize: '13px', fontWeight: '800' }}>{w.name}</span>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '13px', fontWeight: '900' }}>{formatRupiah(w.amount)}</p>
-                    <p style={{ fontSize: '10px', color: '#666', fontWeight: '700' }}>{w.percentage.toFixed(1)}%</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // =========================================================================
-  // NORMAL HOMETAB VIEW (Clean, original layout restored)
-  // =========================================================================
   return (
     <>
       {/* TOTAL SALDO CARD */}
       <section className="card" style={{ background: '#BBEFFA', position: 'relative', overflow: 'hidden' }}>
-        {/* Yellow circle ornament (preserved as requested) */}
+        {/* Yellow circle ornament (preserved) */}
         <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', background: '#FEF08A', borderRadius: '50%', border: '2px solid #1A1D1E', zIndex: 0 }} />
 
-        {/* PieChart Icon Button in Top Right of Card */}
+        {/* PieChart Icon Button in Top Right of Card (opens unified summary) */}
         <button
-          onClick={() => setShowSummary(true)}
+          onClick={onOpenSummary}
           title="Lihat Ringkasan & Grafik"
           className="btn-pressed-blue"
           style={{
