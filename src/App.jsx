@@ -252,11 +252,55 @@ function App() {
     }
   }, [wallets, categories]);
 
+  const checkClipboardReceipt = useCallback(async () => {
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.readText) return;
+      const text = await navigator.clipboard.readText();
+      if (!text || text.length < 20) return;
+
+      const lastProcessed = sessionStorage.getItem('mywallet_last_clip_receipt');
+      if (lastProcessed === text) return;
+
+      const parsed = parseReceiptText(text);
+      if (parsed && parsed.success && parsed.amount > 0) {
+        sessionStorage.setItem('mywallet_last_clip_receipt', text);
+
+        let matchWalletId = wallets.length > 0 ? wallets[0].id : '';
+        if (parsed.bank) {
+          const matched = wallets.find(w => {
+            const wName = (w.name || '').toLowerCase();
+            const bName = (parsed.bank || '').toLowerCase();
+            return wName.includes(bName) || bName.includes(wName);
+          });
+          if (matched) matchWalletId = matched.id;
+        }
+
+        let catId = parsed.category || 'other_expense';
+        const catExists = categories.find(c => c.id === catId && c.type === 'expense');
+        if (!catExists) {
+          const defaultExp = categories.find(c => c.type === 'expense');
+          catId = defaultExp ? defaultExp.id : 'other_expense';
+        }
+
+        setReceiptConfirmData({
+          title: parsed.title || `Transaksi ${parsed.bank}`,
+          amount: parsed.amount,
+          bank: parsed.bank,
+          category: catId,
+          walletId: matchWalletId
+        });
+      }
+    } catch (e) {
+      // Ignore clipboard permission rejection if user didn't grant
+    }
+  }, [wallets, categories]);
+
   useEffect(() => {
     processReceiptUrl();
 
     const handleResume = () => {
       setTimeout(processReceiptUrl, 150);
+      setTimeout(checkClipboardReceipt, 400);
     };
 
     window.addEventListener('visibilitychange', handleResume);
@@ -272,7 +316,7 @@ function App() {
       window.removeEventListener('popstate', handleResume);
       window.removeEventListener('hashchange', handleResume);
     };
-  }, [processReceiptUrl]);
+  }, [processReceiptUrl, checkClipboardReceipt]);
 
   // Auth Handlers
   const handleAuth = async (e) => {
