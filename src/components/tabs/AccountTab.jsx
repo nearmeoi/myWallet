@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { 
   User, LogOut, LoaderCircle, Cloud, Tag, ChevronRight, Banknote, 
-  CreditCard, Smartphone, Edit3, Trash2, Save, PieChart, Zap, Key, Copy, Check, Info, ExternalLink
+  CreditCard, Smartphone, Edit3, Trash2, Save, PieChart, Zap, Key, Copy, Check, Info, ExternalLink, Bug
 } from 'lucide-react';
 import { formatRupiah } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import { IOS_SHORTCUT_URL } from '../../lib/constants';
+import ShortcutDebugModal from '../modals/ShortcutDebugModal';
 
 const AccountTab = ({ 
   user, 
@@ -42,6 +43,7 @@ const AccountTab = ({
   const [copiedKey, setCopiedKey] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [isGeneratingKey, setIsGeneratingKey] = useState(false);
+  const [showDebugModal, setShowDebugModal] = useState(false);
 
   const shortcutUrlTemplate = urlType === 'pwa' 
     ? `webapp://${window.location.host}/#receipt=` 
@@ -510,7 +512,7 @@ const AccountTab = ({
                         {/* Tester Box */}
                         <div style={{ marginTop: '12px', padding: '12px', background: '#FEF9C3', border: '2px solid #1A1D1E', borderRadius: '8px' }}>
                           <p style={{ fontSize: '12px', fontWeight: '800', margin: '0 0 6px 0', color: '#1A1D1E' }}>
-                            🧪 Tes Pop-Up Konfirmasi di HP Anda:
+                            🧪 Uji Coba & Diagnostik di HP Anda:
                           </p>
                           <button
                             type="button"
@@ -519,13 +521,27 @@ const AccountTab = ({
                             style={{
                               width: '100%', padding: '10px', background: '#D4F7E6', border: '2px solid #1A1D1E',
                               borderRadius: '8px', fontWeight: '800', fontSize: '12px', cursor: 'pointer',
-                              boxShadow: '2px 2px 0px #1A1D1E', color: '#1A1D1E', marginBottom: '6px'
+                              boxShadow: '2px 2px 0px #1A1D1E', color: '#1A1D1E', marginBottom: '8px'
                             }}
                           >
                             Buka Simulasi Pop-Up Struk Sekarang
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowDebugModal(true)}
+                            className="btn-pressed-blue"
+                            style={{
+                              width: '100%', padding: '10px', background: '#FEF08A', border: '2px solid #1A1D1E',
+                              borderRadius: '8px', fontWeight: '800', fontSize: '12px', cursor: 'pointer',
+                              boxShadow: '2px 2px 0px #1A1D1E', color: '#1A1D1E', marginBottom: '6px',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                            }}
+                          >
+                            <Bug size={14} />
+                            <span>Buka Diagnostik & Debugger URL</span>
+                          </button>
                           <p style={{ fontSize: '10px', color: '#555', margin: 0 }}>
-                            Tekan tombol di atas untuk memastikan dialog konfirmasi (Yes / No) berfungsi normal di layar Anda.
+                            Gunakan alat di atas untuk melihat parameter URL, membaca clipboard, dan memeriksa perilaku iOS secara langsung.
                           </p>
                         </div>
                       </div>
@@ -633,6 +649,13 @@ const AccountTab = ({
           )}
         </div>
       </div>
+
+      {/* Live Shortcut & URL Debugger Modal */}
+      <ShortcutDebugModal
+        isOpen={showDebugModal}
+        onClose={() => setShowDebugModal(false)}
+        onTriggerReceipt={onTriggerSampleReceipt}
+      />
     </>
   );
 };

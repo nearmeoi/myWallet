@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { 
   ArrowDownLeft, ArrowUpRight, MoreHorizontal, ArrowLeftRight, 
-  Search, Filter, AlertCircle, PieChart
+  Search, Filter, AlertCircle, PieChart, Clipboard
 } from 'lucide-react';
 import TransactionCard from '../TransactionCard';
 import { AVAILABLE_ICONS } from '../../lib/constants';
 import { formatDate, formatRupiah } from '../../lib/utils';
 import { useDebt } from '../../context/DebtContext';
+import { parseReceiptText } from '../../lib/receiptParser';
 
 const HomeTab = ({ 
   user,
@@ -18,7 +19,9 @@ const HomeTab = ({
   onOpenSummary,
   onRequireAuth,
   onDelete, 
-  onEdit 
+  onEdit,
+  onTriggerReceipt,
+  addToast
 }) => {
   const { totalOwed } = useDebt();
 
@@ -77,6 +80,53 @@ const HomeTab = ({
     groups[date].push(tx);
     return groups;
   }, {});
+
+  const handleReadClipboard = async () => {
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        if (addToast) addToast('Browser tidak mendukung pembacaan clipboard otomatis.', 'info');
+        return;
+      }
+      const text = await navigator.clipboard.readText();
+      if (!text || text.trim().length === 0) {
+        if (addToast) addToast('Papan klip (clipboard) Anda masih kosong.', 'info');
+        return;
+      }
+      const parsed = parseReceiptText(text);
+      if (parsed && parsed.success && parsed.amount > 0) {
+        let matchWalletId = wallets.length > 0 ? wallets[0].id : '';
+        if (parsed.bank) {
+          const matched = wallets.find(w => {
+            const wName = (w.name || '').toLowerCase();
+            const bName = (parsed.bank || '').toLowerCase();
+            return wName.includes(bName) || bName.includes(wName);
+          });
+          if (matched) matchWalletId = matched.id;
+        }
+
+        let catId = parsed.category || 'other_expense';
+        const catExists = categories.find(c => c.id === catId && c.type === 'expense');
+        if (!catExists) {
+          const defaultExp = categories.find(c => c.type === 'expense');
+          catId = defaultExp ? defaultExp.id : 'other_expense';
+        }
+
+        if (onTriggerReceipt) {
+          onTriggerReceipt({
+            title: parsed.title || `Transaksi ${parsed.bank}`,
+            amount: parsed.amount,
+            bank: parsed.bank,
+            category: catId,
+            walletId: matchWalletId
+          });
+        }
+      } else {
+        if (addToast) addToast('Teks di clipboard terbaca, tapi belum terdeteksi sebagai struk.', 'info');
+      }
+    } catch (err) {
+      if (addToast) addToast('Izin akses papan klip belum diizinkan oleh sistem iOS.', 'info');
+    }
+  };
 
   return (
     <>
@@ -188,6 +238,51 @@ const HomeTab = ({
           </div>
         </div>
       </section>
+
+      {/* Quick Paste Receipt Button (1-Tap from Clipboard) */}
+      <button
+        type="button"
+        onClick={handleReadClipboard}
+        className="btn-pressed-blue"
+        style={{
+          width: '100%',
+          padding: '12px 16px',
+          background: '#FEF08A',
+          border: '2px solid #1A1D1E',
+          borderRadius: '12px',
+          boxShadow: '3px 3px 0px #1A1D1E',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          cursor: 'pointer',
+          marginTop: '16px',
+          marginBottom: '8px',
+          color: '#1A1D1E'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            width: '32px', height: '32px', borderRadius: '8px', background: '#FFFFFF',
+            border: '2px solid #1A1D1E', display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <Clipboard size={18} />
+          </div>
+          <div style={{ textAlign: 'left' }}>
+            <p style={{ margin: 0, fontWeight: '800', fontSize: '13px' }}>
+              Deteksi Struk dari Clipboard
+            </p>
+            <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>
+              Catat struk Mandiri, BRImo, SeaBank, DANA, ShopeePay
+            </p>
+          </div>
+        </div>
+        <span style={{
+          fontSize: '11px', fontWeight: '800', background: '#FFFFFF',
+          padding: '4px 8px', borderRadius: '6px', border: '1.5px solid #1A1D1E'
+        }}>
+          1 Tap ⚡
+        </span>
+      </button>
 
       {/* Search & Filter Bar */}
       <div style={{ marginTop: '24px', display: 'flex', gap: '8px', alignItems: 'center' }}>

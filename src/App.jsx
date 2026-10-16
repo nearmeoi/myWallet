@@ -572,6 +572,8 @@ function App() {
               onRequireAuth={() => handleTabChange('account')}
               onDelete={(id) => triggerDelete(id, 'transaction')}
               onEdit={(item) => openModal(item.category === 'transfer' ? 'transfer' : 'transaction', item.type, item)}
+              onTriggerReceipt={setAndPersistReceipt}
+              addToast={addToast}
             />
           )}
 
