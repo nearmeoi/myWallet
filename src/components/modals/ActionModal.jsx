@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { X, Tag, Banknote, CreditCard, Smartphone, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { X, Tag, Banknote, CreditCard, Smartphone, ChevronDown, ChevronUp } from 'lucide-react';
 import { useWallet, findTransferTwin } from '../../context/WalletContext';
 import { AVAILABLE_ICONS, PRESET_COLORS } from '../../lib/constants';
 import { formatNumberInput, formatRupiah } from '../../lib/utils';
-import { parseReceiptText } from '../../lib/receiptParser';
 import NeoColorPicker from '../ui/NeoColorPicker';
 
 const extractTransferNotes = (title) => {
@@ -105,45 +104,6 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
   // Computed
   const incomeCategories = categories.filter(c => c.type === 'income');
   const expenseCategories = categories.filter(c => c.type === 'expense');
-
-  const handlePasteReceipt = async () => {
-    try {
-      if (!navigator.clipboard || !navigator.clipboard.readText) {
-        addToast('Clipboard tidak didukung di browser ini.', 'error');
-        return;
-      }
-      const text = await navigator.clipboard.readText();
-      if (!text || !text.trim()) {
-        addToast('Papan klip (clipboard) masih kosong!', 'info');
-        return;
-      }
-      const parsed = parseReceiptText(text);
-      if (parsed && parsed.success && parsed.amount > 0) {
-        setFormAmount(formatNumberInput(parsed.amount));
-        if (parsed.title) setFormTitle(parsed.title);
-        
-        if (parsed.bank) {
-          const matched = wallets.find(w => {
-            const wName = (w.name || '').toLowerCase();
-            const bName = (parsed.bank || '').toLowerCase();
-            return wName.includes(bName) || bName.includes(wName);
-          });
-          if (matched) setFormWallet(matched.id);
-        }
-
-        if (parsed.category) {
-          const catExists = categories.find(c => c.id === parsed.category && c.type === currentType);
-          if (catExists) setFormCategory(catExists.id);
-        }
-
-        addToast(`Struk ${parsed.bank} terdeteksi & ditempel!`, 'success');
-      } else {
-        addToast('Teks struk terbaca, tetapi nominal tidak terdeteksi otomatis.', 'info');
-      }
-    } catch (err) {
-      addToast('Izin akses clipboard ditolak browser.', 'error');
-    }
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -442,24 +402,6 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
 
           {currentMode !== 'category' && currentMode !== 'wallet' && (
             <>
-              {currentMode === 'transaction' && !editingItem?.id && (
-                <button
-                  type="button"
-                  onClick={handlePasteReceipt}
-                  className="btn-pressed-blue"
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                    width: '100%', padding: '9px 12px', background: '#FEF08A',
-                    border: '2px solid #1A1D1E', borderRadius: '8px',
-                    fontWeight: '800', fontSize: '11px', marginBottom: '16px',
-                    cursor: 'pointer', boxShadow: '2px 2px 0px #1A1D1E', color: '#1A1D1E'
-                  }}
-                >
-                  <Sparkles size={14} />
-                  <span>Tempel Struk dari Clipboard (Auto-isi)</span>
-                </button>
-              )}
-
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ fontSize: '12px', fontWeight: '700', marginBottom: '8px', display: 'block' }}>NOMINAL (RP)</label>
                 <input autoFocus type="text" inputMode="numeric" value={formAmount} onChange={e => setFormAmount(formatNumberInput(e.target.value))} placeholder="0" style={{ fontSize: '24px', textAlign: 'center' }} />
