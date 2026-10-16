@@ -197,7 +197,7 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
       }
     } else if (currentMode === 'wishlist') {
       const newItem = { name: formTitle, price: amount };
-      if (editingItem) {
+      if (editingItem && editingItem.id) {
         updateWishlistItem(editingItem.id, newItem);
         addToast('Wishlist updated!');
       } else {
@@ -214,7 +214,7 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
         walletId: formWallet || null
       };
 
-      if (editingItem) {
+      if (editingItem && editingItem.id) {
         updateTransaction(editingItem.id, txData);
         addToast('Transaksi updated!');
       } else {
@@ -233,8 +233,8 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
         <div className="modal-header">
           <h3 style={{ fontSize: '20px', fontWeight: '900' }}>
             {currentMode === 'budget' && 'Set Budget'}
-            {currentMode === 'wishlist' && (editingItem ? 'Edit Item' : 'New Item')}
-            {currentMode === 'transaction' && (editingItem ? 'Edit Transaksi' : 'Transaksi Baru')}
+            {currentMode === 'wishlist' && (editingItem?.id ? 'Edit Item' : 'New Item')}
+            {currentMode === 'transaction' && (editingItem?.id ? 'Edit Transaksi' : 'Transaksi Baru')}
             {currentMode === 'transfer' && (editingItem ? 'Edit Transfer' : 'Transfer Antar Dompet')}
             {currentMode === 'category' && (editingItem ? 'Edit Kategori' : 'Kategori Baru')}
             {currentMode === 'wallet' && (editingItem ? 'Edit Dompet' : 'Dompet Baru')}

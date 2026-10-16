@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { useWallet } from './context/WalletContext';
 import { useDebt } from './context/DebtContext';
 import { useSavings } from './context/SavingsContext';
+import { parseReceiptText } from './lib/receiptParser';
 import Toast from './components/ui/Toast';
 import ConfirmDialog from './components/ui/ConfirmDialog';
 import PullToRefresh from './components/ui/PullToRefresh';
@@ -128,6 +129,77 @@ function App() {
     });
   };
   const removeToast = (id) => setToasts(prev => prev.filter(t => t.id !== id));
+
+  // Handle incoming receipt from iOS Shortcut (?receipt=... or ?ocr=... or ?text=...)
+  const receiptProcessedRef = useRef(false);
+  useEffect(() => {
+    if (authLoading || receiptProcessedRef.current) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const receiptQuery = urlParams.get('receipt') || urlParams.get('ocr') || urlParams.get('text');
+
+    if (receiptQuery) {
+      receiptProcessedRef.current = true;
+
+      // Clean query parameter from URL without page reload
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('receipt');
+        url.searchParams.delete('ocr');
+        url.searchParams.delete('text');
+        window.history.replaceState({}, document.title, url.pathname + (url.hash || ''));
+      } catch (e) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      if (!user) {
+        addToast('Silakan login terlebih dahulu untuk mencatat transaksi struk.', 'info');
+        setActiveTab('account');
+        return;
+      }
+
+      const parsed = parseReceiptText(receiptQuery);
+      if (parsed && parsed.success && parsed.amount > 0) {
+        // Find matching wallet by bank name
+        let matchWalletId = wallets.length > 0 ? wallets[0].id : '';
+        if (parsed.bank) {
+          const matched = wallets.find(w => {
+            const wName = (w.name || '').toLowerCase();
+            const bName = (parsed.bank || '').toLowerCase();
+            return wName.includes(bName) || bName.includes(wName);
+          });
+          if (matched) matchWalletId = matched.id;
+        }
+
+        // Find matching category
+        let catId = parsed.category || 'other_expense';
+        const catExists = categories.find(c => c.id === catId && c.type === 'expense');
+        if (!catExists) {
+          const defaultExp = categories.find(c => c.type === 'expense');
+          catId = defaultExp ? defaultExp.id : 'other_expense';
+        }
+
+        setModalMode('transaction');
+        setModalType('expense');
+        setEditingItem({
+          title: parsed.title || `Transaksi ${parsed.bank}`,
+          amount: parsed.amount,
+          category: catId,
+          walletId: matchWalletId,
+          type: 'expense',
+          _receiptKey: Date.now()
+        });
+        setShowModal(true);
+        addToast(`Struk ${parsed.bank} terdeteksi! Periksa & simpan.`, 'info');
+      } else {
+        addToast('Teks struk terbaca, tetapi nominal tidak terdeteksi otomatis. Silakan isi form.', 'info');
+        setModalMode('transaction');
+        setModalType('expense');
+        setEditingItem(null);
+        setShowModal(true);
+      }
+    }
+  }, [authLoading, user, wallets, categories]);
 
   // Auth Handlers
   const handleAuth = async (e) => {
@@ -418,7 +490,7 @@ function App() {
       {/* Action Modal (transaction, wallet, category, budget, transfer) */}
       {isActionModal && (
         <ActionModal 
-          key={`${modalMode}-${modalType}-${editingItem?.id || 'new'}`}
+          key={`${modalMode}-${modalType}-${editingItem?.id || editingItem?._receiptKey || 'new'}`}
           isOpen={isActionModal}
           onClose={() => {
             setShowModal(false);

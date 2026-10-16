@@ -36,8 +36,18 @@ const AccountTab = ({
   const { updateProfile } = useAuth();
   const [profileName, setProfileName] = useState(user?.user_metadata?.username || '');
   const [showShortcutInfo, setShowShortcutInfo] = useState(false);
+  const [shortcutMode, setShortcutMode] = useState('simple');
   const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
   const [isGeneratingKey, setIsGeneratingKey] = useState(false);
+
+  const handleCopyUrl = () => {
+    const url = `${window.location.origin}/?receipt=`;
+    navigator.clipboard.writeText(url);
+    setCopiedUrl(true);
+    addToast('URL Pintasan berhasil disalin!', 'success');
+    setTimeout(() => setCopiedUrl(false), 2000);
+  };
 
   React.useEffect(() => {
     if (user?.user_metadata?.username) {
@@ -340,115 +350,203 @@ const AccountTab = ({
 
               {showShortcutInfo && (
                 <div style={{ padding: '16px', background: '#FAFAFA', borderTop: '2px solid #1A1D1E' }}>
-                  {/* Get Shortcut Button */}
-                  <a
-                    href={IOS_SHORTCUT_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-pressed-blue"
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                      width: '100%', padding: '12px 16px', background: '#FEF08A', color: '#1A1D1E',
-                      border: '2px solid #1A1D1E', borderRadius: '10px', fontWeight: '800',
-                      fontSize: '13px', textDecoration: 'none', marginBottom: '16px',
-                      boxShadow: '3px 3px 0px #1A1D1E'
-                    }}
-                  >
-                    <Zap size={18} />
-                    <span>Pasang Shortcut di iPhone (Get Shortcut)</span>
-                    <ExternalLink size={15} />
-                  </a>
+                  {/* Mode Selector Tabs */}
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShortcutMode('simple')}
+                      style={{
+                        flex: 1, padding: '8px 10px', borderRadius: '8px',
+                        border: '2px solid #1A1D1E',
+                        background: shortcutMode === 'simple' ? '#1A1D1E' : '#FFFFFF',
+                        color: shortcutMode === 'simple' ? '#FFFFFF' : '#1A1D1E',
+                        fontWeight: '800', fontSize: '12px', cursor: 'pointer',
+                        boxShadow: shortcutMode === 'simple' ? 'none' : '2px 2px 0px #1A1D1E'
+                      }}
+                    >
+                      ⚡ Mode Simpel (2 Aksi)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShortcutMode('advanced')}
+                      style={{
+                        flex: 1, padding: '8px 10px', borderRadius: '8px',
+                        border: '2px solid #1A1D1E',
+                        background: shortcutMode === 'advanced' ? '#1A1D1E' : '#FFFFFF',
+                        color: shortcutMode === 'advanced' ? '#FFFFFF' : '#1A1D1E',
+                        fontWeight: '800', fontSize: '12px', cursor: 'pointer',
+                        boxShadow: shortcutMode === 'advanced' ? 'none' : '2px 2px 0px #1A1D1E'
+                      }}
+                    >
+                      ⚙️ Mode Background API
+                    </button>
+                  </div>
 
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: '800', color: '#666', marginBottom: '6px', display: 'block' }}>
-                      KUNCI API PRIBADI (PERSONAL API KEY)
-                    </label>
-
-                    {shortcutApiKey ? (
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <input
-                          type="text"
-                          readOnly
-                          value={shortcutApiKey}
-                          style={{
-                            flex: 1, fontFamily: 'monospace', fontSize: '12px', padding: '10px 12px',
-                            background: '#FFFFFF', border: '2px solid #1A1D1E', borderRadius: '8px'
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={handleCopyKey}
-                          className="btn-pressed-blue"
-                          style={{
-                            padding: '10px 14px', background: copiedKey ? '#D4F7E6' : '#FFFFFF',
-                            border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '700',
-                            fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
-                          }}
-                        >
-                          {copiedKey ? <Check size={14} color="#16A34A" /> : <Copy size={14} />}
-                          <span>{copiedKey ? 'Tersalin' : 'Salin'}</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleGenerateApiKey}
-                        disabled={isGeneratingKey}
+                  {shortcutMode === 'simple' ? (
+                    <div>
+                      {/* Get Shortcut Button */}
+                      <a
+                        href={IOS_SHORTCUT_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="btn-pressed-blue"
                         style={{
-                          width: '100%', padding: '12px', background: '#D4F7E6', border: '2px solid #1A1D1E',
-                          borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: isGeneratingKey ? 'not-allowed' : 'pointer',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                          width: '100%', padding: '12px 16px', background: '#FEF08A', color: '#1A1D1E',
+                          border: '2px solid #1A1D1E', borderRadius: '10px', fontWeight: '800',
+                          fontSize: '13px', textDecoration: 'none', marginBottom: '14px',
+                          boxShadow: '3px 3px 0px #1A1D1E'
                         }}
                       >
-                        {isGeneratingKey ? <LoaderCircle size={16} className="animate-spin" /> : <Key size={16} />}
-                        <span>Buat Kunci API iOS Shortcut</span>
-                      </button>
-                    )}
+                        <Zap size={18} />
+                        <span>Pasang Shortcut di iPhone (Get Shortcut)</span>
+                        <ExternalLink size={15} />
+                      </a>
 
-                    {shortcutApiKey && (
-                      <div style={{ marginTop: '6px', textAlign: 'right' }}>
-                        <button
-                          type="button"
-                          onClick={handleGenerateApiKey}
-                          disabled={isGeneratingKey}
-                          style={{
-                            background: 'none', border: 'none', color: '#666', fontSize: '11px',
-                            textDecoration: 'underline', cursor: 'pointer'
-                          }}
-                        >
-                          {isGeneratingKey ? 'Membuat...' : 'Buat Ulang Kunci (Regenerate)'}
-                        </button>
+                      <div style={{ marginBottom: '14px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: '800', color: '#666', marginBottom: '6px', display: 'block' }}>
+                          AWALAN URL UNTUK SHORTCUT
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            readOnly
+                            value={`${window.location.origin}/?receipt=`}
+                            style={{
+                              flex: 1, fontFamily: 'monospace', fontSize: '11px', padding: '10px 12px',
+                              background: '#FFFFFF', border: '2px solid #1A1D1E', borderRadius: '8px'
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleCopyUrl}
+                            className="btn-pressed-blue"
+                            style={{
+                              padding: '10px 14px', background: copiedUrl ? '#D4F7E6' : '#FFFFFF',
+                              border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '700',
+                              fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                            }}
+                          >
+                            {copiedUrl ? <Check size={14} color="#16A34A" /> : <Copy size={14} />}
+                            <span>{copiedUrl ? 'Tersalin' : 'Salin'}</span>
+                          </button>
+                        </div>
                       </div>
-                    )}
-                  </div>
 
-                  {/* Cara Pakai */}
-                  <div style={{
-                    padding: '12px 14px', background: '#FFFFFF', border: '2px solid #1A1D1E',
-                    borderRadius: '8px', fontSize: '12px', lineHeight: '1.6'
-                  }}>
-                    <p style={{ fontWeight: '800', marginBottom: '8px', color: '#1A1D1E' }}>
-                      Cara Pakai di iPhone (iOS):
-                    </p>
-                    <ol style={{ margin: 0, paddingLeft: '18px', color: '#444' }}>
-                      <li style={{ marginBottom: '6px' }}>
-                        Buka aplikasi <strong>Shortcuts (Pintasan)</strong> di iPhone, buat pintasan baru yang menerima <em>Images / Gambar</em> dari Share Sheet.
-                      </li>
-                      <li style={{ marginBottom: '6px' }}>
-                        Gunakan aksi <strong>"Ekstrak Teks dari Gambar"</strong> lalu kirim ke API myWallet.
-                      </li>
-                      <li>
-                        Saat transfer di <strong>Mandiri, BRImo, SeaBank, DANA, atau ShopeePay</strong>, cukup ketuk <strong>Share (Bagikan)</strong> struk ke Shortcut. Pop-up konfirmasi akan muncul di atas layar untuk langsung disimpan!
-                      </li>
-                    </ol>
-                    <div style={{ marginTop: '10px', padding: '8px 10px', background: '#D4F7E6', borderRadius: '6px', border: '1px solid #1A1D1E', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Info size={16} color="#1A1D1E" />
-                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#1A1D1E' }}>
-                        Pop-up alert native iOS akan muncul di layar atas. Cukup ketuk "Simpan", transaksi langsung tercatat tanpa perlu membuka web!
-                      </span>
+                      {/* Panduan 2 Langkah */}
+                      <div style={{
+                        padding: '12px 14px', background: '#FFFFFF', border: '2px solid #1A1D1E',
+                        borderRadius: '8px', fontSize: '12px', lineHeight: '1.6'
+                      }}>
+                        <p style={{ fontWeight: '800', marginBottom: '8px', color: '#1A1D1E' }}>
+                          Hanya butuh 2 aksi di Shortcuts iPhone:
+                        </p>
+                        <ol style={{ margin: 0, paddingLeft: '18px', color: '#333' }}>
+                          <li style={{ marginBottom: '6px' }}>
+                            Aksi 1: <strong>"Ekstrak Teks dari Gambar"</strong><br />
+                            <span style={{ color: '#666', fontSize: '11px' }}>Input: Gambar dari Lembar Berbagi (Share Sheet)</span>
+                          </li>
+                          <li style={{ marginBottom: '6px' }}>
+                            Aksi 2: <strong>"Buka URL"</strong><br />
+                            <span style={{ color: '#666', fontSize: '11px' }}>URL: <code>{`${window.location.origin}/?receipt=`}[Teks]</code></span>
+                          </li>
+                        </ol>
+                        <div style={{ marginTop: '10px', padding: '10px', background: '#D4F7E6', borderRadius: '6px', border: '1px solid #1A1D1E' }}>
+                          <p style={{ fontSize: '11px', fontWeight: '800', color: '#1A1D1E', margin: '0 0 4px 0' }}>
+                            ✨ Alur Penggunaan:
+                          </p>
+                          <p style={{ fontSize: '11px', color: '#333', margin: 0 }}>
+                            Bagikan struk dari Mandiri, BRImo, SeaBank, DANA, atau ShopeePay ke Shortcut. myWallet langsung terbuka dengan nominal, nama toko/merchant, kategori, dan dompet yang terisi otomatis. Anda tinggal tap <strong>"Simpan Transaksi"</strong>!
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div>
+                      <div style={{ marginBottom: '16px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: '800', color: '#666', marginBottom: '6px', display: 'block' }}>
+                          KUNCI API PRIBADI (PERSONAL API KEY)
+                        </label>
+
+                        {shortcutApiKey ? (
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <input
+                              type="text"
+                              readOnly
+                              value={shortcutApiKey}
+                              style={{
+                                flex: 1, fontFamily: 'monospace', fontSize: '12px', padding: '10px 12px',
+                                background: '#FFFFFF', border: '2px solid #1A1D1E', borderRadius: '8px'
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={handleCopyKey}
+                              className="btn-pressed-blue"
+                              style={{
+                                padding: '10px 14px', background: copiedKey ? '#D4F7E6' : '#FFFFFF',
+                                border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '700',
+                                fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                              }}
+                            >
+                              {copiedKey ? <Check size={14} color="#16A34A" /> : <Copy size={14} />}
+                              <span>{copiedKey ? 'Tersalin' : 'Salin'}</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleGenerateApiKey}
+                            disabled={isGeneratingKey}
+                            className="btn-pressed-blue"
+                            style={{
+                              width: '100%', padding: '12px', background: '#D4F7E6', border: '2px solid #1A1D1E',
+                              borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: isGeneratingKey ? 'not-allowed' : 'pointer',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                            }}
+                          >
+                            {isGeneratingKey ? <LoaderCircle size={16} className="animate-spin" /> : <Key size={16} />}
+                            <span>Buat Kunci API iOS Shortcut</span>
+                          </button>
+                        )}
+
+                        {shortcutApiKey && (
+                          <div style={{ marginTop: '6px', textAlign: 'right' }}>
+                            <button
+                              type="button"
+                              onClick={handleGenerateApiKey}
+                              disabled={isGeneratingKey}
+                              style={{
+                                background: 'none', border: 'none', color: '#666', fontSize: '11px',
+                                textDecoration: 'underline', cursor: 'pointer'
+                              }}
+                            >
+                              {isGeneratingKey ? 'Membuat...' : 'Buat Ulang Kunci (Regenerate)'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{
+                        padding: '12px 14px', background: '#FFFFFF', border: '2px solid #1A1D1E',
+                        borderRadius: '8px', fontSize: '12px', lineHeight: '1.6'
+                      }}>
+                        <p style={{ fontWeight: '800', marginBottom: '8px', color: '#1A1D1E' }}>
+                          Webhook API Transaksi Otomatis:
+                        </p>
+                        <p style={{ fontSize: '11px', color: '#555', margin: '0 0 8px 0' }}>
+                          Endpoint POST: <code>{`${window.location.origin}/api/quick-transaction`}</code><br />
+                          Header: <code>Authorization: Bearer [API_KEY]</code>
+                        </p>
+                        <div style={{ padding: '8px 10px', background: '#FEF9C3', borderRadius: '6px', border: '1px solid #1A1D1E', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Info size={16} color="#1A1D1E" />
+                          <span style={{ fontSize: '11px', fontWeight: '700', color: '#1A1D1E' }}>
+                            Opsi ini mencatat transaksi di background tanpa membuka browser, menggunakan pop-up alert native iOS Shortcuts.
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
