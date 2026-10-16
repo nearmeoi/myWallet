@@ -290,8 +290,8 @@ function App() {
   };
 
   // Determine which modal to render
-  const isDebtModal = showModal && (modalMode === 'debt' || modalMode === 'debtPayment');
-  const isSavingsModal = showModal && (modalMode === 'saving' || modalMode === 'savingTopUp' || modalMode === 'savingWithdraw');
+  const isDebtModal = showModal && (modalMode === 'debt' || modalMode === 'debtPayment' || modalMode === 'debtEdit');
+  const isSavingsModal = showModal && (modalMode === 'saving' || modalMode === 'savingTopUp' || modalMode === 'savingWithdraw' || modalMode === 'savingEdit');
   const isActionModal = showModal && !isDebtModal && !isSavingsModal;
 
   if (authLoading) {

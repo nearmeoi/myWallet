@@ -5,17 +5,18 @@ import { formatNumberInput, formatRupiah } from '../../lib/utils';
 import { useWallet } from '../../context/WalletContext';
 
 export default function DebtModal({ isOpen, onClose, mode, editingItem, addToast }) {
-  // mode: 'debt' = tambah hutang/piutang, 'debtPayment' = bayar cicilan
-  const { addDebt, addPayment } = useDebt();
+  // mode: 'debt' = tambah hutang/piutang, 'debtEdit' = edit, 'debtPayment' = bayar cicilan
+  const { addDebt, updateDebt, addPayment } = useDebt();
   const { wallets, addTransaction } = useWallet();
 
   const isPayment = mode === 'debtPayment';
+  const isEdit = mode === 'debtEdit' || (mode === 'debt' && Boolean(editingItem));
 
-  const [debtType, setDebtType] = useState('owe'); // 'owe' | 'lend'
-  const [personName, setPersonName] = useState('');
-  const [totalAmount, setTotalAmount] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [notes, setNotes] = useState('');
+  const [debtType, setDebtType] = useState(() => editingItem?.type || 'owe'); // 'owe' | 'lend'
+  const [personName, setPersonName] = useState(() => editingItem?.personName || '');
+  const [totalAmount, setTotalAmount] = useState(() => editingItem?.totalAmount ? formatNumberInput(editingItem.totalAmount) : '');
+  const [dueDate, setDueDate] = useState(() => editingItem?.dueDate ? editingItem.dueDate.split('T')[0] : '');
+  const [notes, setNotes] = useState(() => editingItem?.notes || '');
   const [payAmount, setPayAmount] = useState('');
   const [payNotes, setPayNotes] = useState('');
   const [payWallet, setPayWallet] = useState(wallets.length > 0 ? wallets[0].id : '');
@@ -48,9 +49,8 @@ export default function DebtModal({ isOpen, onClose, mode, editingItem, addToast
       return;
     }
 
-    // Add new debt
     if (!personName.trim()) {
-      addToast('Masukkan nama orang', 'error');
+      addToast('Masukkan nama pihak terkait', 'error');
       return;
     }
     const amount = parseFloat(totalAmount.replace(/[^0-9]/g, ''));
@@ -59,15 +59,26 @@ export default function DebtModal({ isOpen, onClose, mode, editingItem, addToast
       return;
     }
 
-    addDebt({
-      type: debtType,
-      personName: personName.trim(),
-      totalAmount: amount,
-      paidAmount: 0,
-      dueDate: dueDate || null,
-      notes: notes.trim()
-    });
-    addToast(debtType === 'owe' ? 'Hutang dicatat!' : 'Piutang dicatat!');
+    if (isEdit) {
+      updateDebt(editingItem.id, {
+        type: debtType,
+        personName: personName.trim(),
+        totalAmount: amount,
+        dueDate: dueDate || null,
+        notes: notes.trim()
+      });
+      addToast('Catatan berhasil diperbarui!', 'success');
+    } else {
+      addDebt({
+        type: debtType,
+        personName: personName.trim(),
+        totalAmount: amount,
+        paidAmount: 0,
+        dueDate: dueDate || null,
+        notes: notes.trim()
+      });
+      addToast(debtType === 'owe' ? 'Hutang dicatat!' : 'Piutang dicatat!');
+    }
     onClose();
   };
 
@@ -76,7 +87,11 @@ export default function DebtModal({ isOpen, onClose, mode, editingItem, addToast
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3 style={{ fontSize: '20px', fontWeight: '900' }}>
-            {isPayment ? `Bayar ke ${editingItem?.personName}` : 'Catat Hutang/Piutang'}
+            {isPayment 
+              ? `Bayar ke ${editingItem?.personName}` 
+              : isEdit 
+                ? `Edit Catatan: ${editingItem?.personName}` 
+                : 'Catat Hutang/Piutang'}
           </h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
             <X size={22} color="#1A1D1E" />
@@ -157,7 +172,7 @@ export default function DebtModal({ isOpen, onClose, mode, editingItem, addToast
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ fontSize: '12px', fontWeight: '700', marginBottom: '8px', display: 'block' }}>NAMA ORANG</label>
                 <input
-                  autoFocus
+                  autoFocus={!isEdit}
                   type="text"
                   value={personName}
                   onChange={e => setPersonName(e.target.value)}
@@ -166,7 +181,9 @@ export default function DebtModal({ isOpen, onClose, mode, editingItem, addToast
               </div>
 
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ fontSize: '12px', fontWeight: '700', marginBottom: '8px', display: 'block' }}>NOMINAL (RP)</label>
+                <label style={{ fontSize: '12px', fontWeight: '700', marginBottom: '8px', display: 'block' }}>
+                  {isEdit ? 'TOTAL NOMINAL BARU (RP)' : 'NOMINAL (RP)'}
+                </label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -175,6 +192,11 @@ export default function DebtModal({ isOpen, onClose, mode, editingItem, addToast
                   placeholder="0"
                   style={{ fontSize: '24px', textAlign: 'center' }}
                 />
+                {isEdit && editingItem?.paidAmount > 0 && (
+                  <p style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                    *Sudah dicicil/terbayar: {formatRupiah(editingItem.paidAmount)}
+                  </p>
+                )}
               </div>
 
               <div style={{ marginBottom: '20px' }}>
@@ -200,10 +222,10 @@ export default function DebtModal({ isOpen, onClose, mode, editingItem, addToast
             style={{
               width: '100%', padding: '16px', background: '#1A1D1E', color: '#fff',
               border: '2px solid #1A1D1E', borderRadius: '12px', fontWeight: '700',
-              boxShadow: '4px 4px 0px rgba(0,0,0,0.2)'
+              boxShadow: '4px 4px 0px rgba(0,0,0,0.2)', cursor: 'pointer'
             }}
           >
-            {isPayment ? 'Catat Pembayaran' : (debtType === 'owe' ? 'Simpan Hutang' : 'Simpan Piutang')}
+            {isPayment ? 'Catat Pembayaran' : isEdit ? 'Simpan Perubahan' : (debtType === 'owe' ? 'Simpan Hutang' : 'Simpan Piutang')}
           </button>
         </form>
       </div>

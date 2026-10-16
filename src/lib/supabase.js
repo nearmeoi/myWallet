@@ -606,6 +606,9 @@ export const updateDebt = async (id, updates) => {
   try {
     if (!isSupabaseConfigured) return { data: null, error: null };
     const dbUpdates = {};
+    if (updates.personName !== undefined) dbUpdates.person_name = updates.personName;
+    if (updates.totalAmount !== undefined) dbUpdates.total_amount = updates.totalAmount;
+    if (updates.type !== undefined) dbUpdates.type = updates.type;
     if (updates.paidAmount !== undefined) dbUpdates.paid_amount = updates.paidAmount;
     if (updates.status !== undefined) dbUpdates.status = updates.status;
     if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
@@ -720,7 +723,19 @@ export const createSaving = async (userId, saving) => {
 export const updateSaving = async (id, updates) => {
   try {
     if (!isSupabaseConfigured) return { data: null, error: null };
-    const { data, error } = await supabase.from('savings').update(updates).eq('id', id).select().single();
+    const dbUpdates = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.targetAmount !== undefined) dbUpdates.target_amount = updates.targetAmount;
+    if (updates.target_amount !== undefined) dbUpdates.target_amount = updates.target_amount;
+    if (updates.currentAmount !== undefined) dbUpdates.current_amount = updates.currentAmount;
+    if (updates.current_amount !== undefined) dbUpdates.current_amount = updates.current_amount;
+    if (updates.icon !== undefined) dbUpdates.icon = updates.icon;
+    if (updates.color !== undefined) dbUpdates.color = updates.color;
+    if (updates.deadline !== undefined) dbUpdates.deadline = updates.deadline;
+    if (updates.isCompleted !== undefined) dbUpdates.is_completed = updates.isCompleted;
+    if (updates.is_completed !== undefined) dbUpdates.is_completed = updates.is_completed;
+
+    const { data, error } = await supabase.from('savings').update(dbUpdates).eq('id', id).select().single();
     return { data, error };
   } catch (err) {
     return { data: null, error: err };

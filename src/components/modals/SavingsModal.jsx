@@ -2,23 +2,25 @@ import React, { useState } from 'react';
 import { X, Target, ChevronDown, ChevronUp } from 'lucide-react';
 import { useSavings } from '../../context/SavingsContext';
 import { useWallet } from '../../context/WalletContext';
-import { AVAILABLE_ICONS, PRESET_COLORS } from '../../lib/constants';
+import { AVAILABLE_ICONS } from '../../lib/constants';
 import { formatNumberInput, formatRupiah } from '../../lib/utils';
+import NeoColorPicker from '../ui/NeoColorPicker';
 
 export default function SavingsModal({ isOpen, onClose, mode, editingItem, addToast }) {
-  // mode: 'saving' = buat goal baru, 'savingTopUp' = tabung, 'savingWithdraw' = tarik
-  const { addSaving, topUpSaving, withdrawSaving } = useSavings();
+  // mode: 'saving' = buat goal baru, 'savingEdit' = edit, 'savingTopUp' = tabung, 'savingWithdraw' = tarik
+  const { addSaving, updateSaving, topUpSaving, withdrawSaving } = useSavings();
   const { wallets, addTransaction } = useWallet();
 
   const isTopUp = mode === 'savingTopUp';
   const isWithdraw = mode === 'savingWithdraw';
-  const isNew = mode === 'saving';
+  const isEdit = mode === 'savingEdit' || (mode === 'saving' && Boolean(editingItem));
+  const isNew = mode === 'saving' && !editingItem;
 
-  const [name, setName] = useState('');
-  const [targetAmount, setTargetAmount] = useState('');
-  const [icon, setIcon] = useState('Target');
-  const [color, setColor] = useState('#D4F7E6');
-  const [deadline, setDeadline] = useState('');
+  const [name, setName] = useState(() => editingItem?.name || '');
+  const [targetAmount, setTargetAmount] = useState(() => editingItem?.targetAmount ? formatNumberInput(editingItem.targetAmount) : '');
+  const [icon, setIcon] = useState(() => editingItem?.icon || 'Target');
+  const [color, setColor] = useState(() => editingItem?.color || '#D4F7E6');
+  const [deadline, setDeadline] = useState(() => editingItem?.deadline ? editingItem.deadline.split('T')[0] : '');
   const [showIconPicker, setShowIconPicker] = useState(false);
 
   const [amount, setAmount] = useState('');
@@ -29,19 +31,30 @@ export default function SavingsModal({ isOpen, onClose, mode, editingItem, addTo
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (isNew) {
+    if (isNew || isEdit) {
       if (!name.trim()) { addToast('Masukkan nama tabungan', 'error'); return; }
       const target = parseFloat(targetAmount.replace(/[^0-9]/g, ''));
       if (!target || target <= 0) { addToast('Masukkan target nominal', 'error'); return; }
 
-      addSaving({
-        name: name.trim(),
-        targetAmount: target,
-        icon,
-        color,
-        deadline: deadline || null
-      });
-      addToast('Kantong tabungan dibuat!');
+      if (isEdit) {
+        updateSaving(editingItem.id, {
+          name: name.trim(),
+          targetAmount: target,
+          icon,
+          color,
+          deadline: deadline || null
+        });
+        addToast('Kantong tabungan berhasil diperbarui!', 'success');
+      } else {
+        addSaving({
+          name: name.trim(),
+          targetAmount: target,
+          icon,
+          color,
+          deadline: deadline || null
+        });
+        addToast('Kantong tabungan dibuat!', 'success');
+      }
       onClose();
       return;
     }
@@ -61,7 +74,7 @@ export default function SavingsModal({ isOpen, onClose, mode, editingItem, addTo
         });
       }
       topUpSaving(editingItem.id, txAmount);
-      addToast(`+${formatRupiah(txAmount)} ditabung!`);
+      addToast(`+${formatRupiah(txAmount)} ditabung!`, 'success');
     } else if (isWithdraw) {
       // Add back to wallet
       if (fromWallet) {
@@ -74,16 +87,22 @@ export default function SavingsModal({ isOpen, onClose, mode, editingItem, addTo
         });
       }
       withdrawSaving(editingItem.id, txAmount);
-      addToast(`${formatRupiah(txAmount)} ditarik dari tabungan`);
+      addToast(`${formatRupiah(txAmount)} ditarik dari tabungan`, 'info');
     }
     onClose();
   };
+
+  const savingsIconList = [
+    'Target', 'Laptop', 'PiggyBank', 'Gift', 'Plane', 'Home', 'Car', 'Smartphone',
+    'ShoppingCart', 'CreditCard', 'GraduationCap', 'Heart', 'Music', 'Gamepad', 'Coffee'
+  ];
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3 style={{ fontSize: '20px', fontWeight: '900' }}>
+            {isEdit && `Edit "${editingItem?.name}"`}
             {isNew && 'Kantong Tabungan Baru'}
             {isTopUp && `Tabung ke "${editingItem?.name}"`}
             {isWithdraw && `Tarik dari "${editingItem?.name}"`}
@@ -94,12 +113,12 @@ export default function SavingsModal({ isOpen, onClose, mode, editingItem, addTo
         </div>
 
         <form onSubmit={handleSubmit}>
-          {isNew && (
+          {(isNew || isEdit) && (
             <>
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ fontSize: '12px', fontWeight: '700', marginBottom: '8px', display: 'block' }}>NAMA TABUNGAN</label>
                 <input
-                  autoFocus
+                  autoFocus={!isEdit}
                   type="text"
                   value={name}
                   onChange={e => setName(e.target.value)}
@@ -117,6 +136,11 @@ export default function SavingsModal({ isOpen, onClose, mode, editingItem, addTo
                   placeholder="0"
                   style={{ fontSize: '24px', textAlign: 'center' }}
                 />
+                {isEdit && editingItem?.currentAmount > 0 && (
+                  <p style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                    *Uang terkumpul saat ini: {formatRupiah(editingItem.currentAmount)}
+                  </p>
+                )}
               </div>
 
               <div style={{ marginBottom: '20px' }}>
@@ -178,7 +202,7 @@ export default function SavingsModal({ isOpen, onClose, mode, editingItem, addTo
                     maxHeight: '160px', overflowY: 'auto'
                   }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {['Target', 'Gift', 'Plane', 'Home', 'ShoppingCart', 'Car', 'Smartphone', 'GraduationCap', 'Heart', 'Music', 'Baby', 'Gamepad', 'Coffee', 'PiggyBank'].map(iconName => {
+                      {savingsIconList.map(iconName => {
                         const IconComp = AVAILABLE_ICONS[iconName];
                         if (!IconComp) return null;
                         const isSelected = icon === iconName;
@@ -209,24 +233,8 @@ export default function SavingsModal({ isOpen, onClose, mode, editingItem, addTo
                 )}
               </div>
 
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ fontSize: '12px', fontWeight: '700', marginBottom: '8px', display: 'block' }}>WARNA</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {PRESET_COLORS.map(c => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setColor(c)}
-                      style={{
-                        width: '36px', height: '36px',
-                        border: color === c ? '3px solid #1A1D1E' : '2px solid #1A1D1E',
-                        borderRadius: '8px', background: c,
-                        boxShadow: color === c ? '2px 2px 0px #1A1D1E' : 'none'
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
+              {/* Neo-brutalist Color Picker with custom color support */}
+              <NeoColorPicker selectedColor={color} onChange={setColor} label="WARNA KANTONG" />
             </>
           )}
 
@@ -279,10 +287,10 @@ export default function SavingsModal({ isOpen, onClose, mode, editingItem, addTo
             style={{
               width: '100%', padding: '16px', background: '#1A1D1E', color: '#fff',
               border: '2px solid #1A1D1E', borderRadius: '12px', fontWeight: '700',
-              boxShadow: '4px 4px 0px rgba(0,0,0,0.2)'
+              boxShadow: '4px 4px 0px rgba(0,0,0,0.2)', cursor: 'pointer'
             }}
           >
-            {isNew ? 'Buat Kantong Tabungan' : (isTopUp ? 'Simpan Tabungan' : 'Tarik Dana')}
+            {isEdit ? 'Simpan Perubahan' : isNew ? 'Buat Kantong Tabungan' : (isTopUp ? 'Simpan Tabungan' : 'Tarik Dana')}
           </button>
         </form>
       </div>

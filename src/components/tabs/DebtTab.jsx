@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, CheckCircle, CreditCard, Users, Bell, AlertCircle, LoaderCircle } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, CreditCard, Users, Bell, AlertCircle, LoaderCircle, Pencil } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useDebt } from '../../context/DebtContext';
 import { formatRupiah } from '../../lib/utils';
@@ -298,6 +298,20 @@ export default function DebtTab({ user, onRequireAuth, onOpenModal, onDelete, ad
                       <span>Ingatkan</span>
                     </button>
 
+                    {/* Edit Debt Button */}
+                    <button
+                      onClick={() => onOpenModal('debtEdit', '', debt)}
+                      title="Edit Catatan"
+                      className="btn-pressed-blue"
+                      style={{
+                        width: '36px', height: '36px', background: '#FFFFFF', border: '2px solid #1A1D1E',
+                        borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '2px 2px 0px #1A1D1E', cursor: 'pointer'
+                      }}
+                    >
+                      <Pencil size={14} />
+                    </button>
+
                     <button
                       onClick={() => onDelete(debt.id, 'debt')}
                       style={{
@@ -315,15 +329,27 @@ export default function DebtTab({ user, onRequireAuth, onOpenModal, onDelete, ad
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#22c55e' }}>
                     <CheckCircle size={16} />
                     <span style={{ fontSize: '13px', fontWeight: '700' }}>Lunas!</span>
-                    <button
-                      onClick={() => onDelete(debt.id, 'debt')}
-                      style={{
-                        marginLeft: 'auto', width: '32px', height: '32px', background: 'none',
-                        border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                      }}
-                    >
-                      <Trash2 size={14} color="#EF4444" />
-                    </button>
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
+                      <button
+                        onClick={() => onOpenModal('debtEdit', '', debt)}
+                        title="Edit Catatan"
+                        style={{
+                          width: '32px', height: '32px', background: 'none',
+                          border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}
+                      >
+                        <Pencil size={14} color="#1A1D1E" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(debt.id, 'debt')}
+                        style={{
+                          width: '32px', height: '32px', background: 'none',
+                          border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}
+                      >
+                        <Trash2 size={14} color="#EF4444" />
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

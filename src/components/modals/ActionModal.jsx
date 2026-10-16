@@ -3,6 +3,7 @@ import { X, Tag, Banknote, CreditCard, Smartphone, ChevronDown, ChevronUp } from
 import { useWallet, findTransferTwin } from '../../context/WalletContext';
 import { AVAILABLE_ICONS, PRESET_COLORS } from '../../lib/constants';
 import { formatNumberInput, formatRupiah } from '../../lib/utils';
+import NeoColorPicker from '../ui/NeoColorPicker';
 
 const extractTransferNotes = (title) => {
   if (!title) return '';
@@ -362,18 +363,7 @@ export default function ActionModal({ isOpen, onClose, mode: initialMode, type: 
                 )}
               </div>
 
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ fontSize: '12px', fontWeight: '700', marginBottom: '8px', display: 'block' }}>WARNA</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {PRESET_COLORS.map(color => (
-                    <button key={color} type="button" onClick={() => setCatColor(color)} style={{
-                      width: '36px', height: '36px', border: catColor === color ? '3px solid #1A1D1E' : '2px solid #1A1D1E',
-                      borderRadius: '8px', background: color,
-                      boxShadow: catColor === color ? '2px 2px 0px #1A1D1E' : 'none'
-                    }} />
-                  ))}
-                </div>
-              </div>
+              <NeoColorPicker selectedColor={catColor} onChange={setCatColor} label="WARNA KATEGORI" />
             </>
           )}
 

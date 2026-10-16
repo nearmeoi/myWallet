@@ -75,7 +75,16 @@ export function DebtProvider({ children }) {
   };
 
   const updateDebt = (id, updates) => {
-    setDebts(prev => prev.map(d => d.id.toString() === id.toString() ? { ...d, ...updates } : d));
+    setDebts(prev => prev.map(d => {
+      if (d.id.toString() !== id.toString()) return d;
+      const updated = { ...d, ...updates };
+      const paid = updated.paidAmount || 0;
+      const total = updated.totalAmount || 0;
+      if (total > 0 && updates.status === undefined) {
+        updated.status = paid >= total ? 'paid' : (paid > 0 ? 'partial' : 'ongoing');
+      }
+      return updated;
+    }));
     if (user && isSupabaseConfigured) {
       apiUpdateDebt(id, updates);
     }

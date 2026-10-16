@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Trash2, Target, PiggyBank, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Target, PiggyBank, AlertCircle, Pencil } from 'lucide-react';
 import { useSavings } from '../../context/SavingsContext';
 import { formatRupiah } from '../../lib/utils';
 import { PRESET_COLORS, AVAILABLE_ICONS } from '../../lib/constants';
@@ -155,6 +155,18 @@ export default function SavingsTab({ user, onRequireAuth, onOpenModal, onDelete 
                       Tarik
                     </button>
                   )}
+                  <button
+                    onClick={() => onOpenModal('savingEdit', '', saving)}
+                    title="Edit Kantong Tabungan"
+                    className="btn-pressed-blue"
+                    style={{
+                      width: '36px', height: '36px', background: '#FFFFFF', border: '2px solid #1A1D1E',
+                      borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '2px 2px 0px #1A1D1E', cursor: 'pointer'
+                    }}
+                  >
+                    <Pencil size={14} />
+                  </button>
                   <button
                     onClick={() => onDelete(saving.id, 'saving')}
                     style={{

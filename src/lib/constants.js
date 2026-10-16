@@ -4,7 +4,8 @@ import {
   ShoppingCart, CreditCard, ShoppingBag, Smartphone, Wifi, Zap, Droplet,
   Heart, Activity, Gamepad, Music, Clapperboard, Ticket,
   Book, GraduationCap, Baby, Dog, Cat, Shirt, Scissors, Hammer, Smile,
-  Sun, Moon, Umbrella, ArrowLeftRight, AlertTriangle, PiggyBank
+  Sun, Moon, Umbrella, ArrowLeftRight, AlertTriangle, PiggyBank,
+  Laptop
 } from 'lucide-react';
 
 
@@ -21,7 +22,7 @@ export const AVAILABLE_ICONS = {
   // Shopping & Bills
   ShoppingCart, CreditCard, Bag: ShoppingBag,
   // Utilities & Tech
-  Smartphone, Wifi, Zap, Droplet,
+  Smartphone, Wifi, Zap, Droplet, Laptop,
   // Health
   Heart, Activity,
   // Entertainment

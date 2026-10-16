@@ -105,7 +105,14 @@ export function SavingsProvider({ children }) {
   };
 
   const updateSaving = (id, updates) => {
-    setSavings(prev => prev.map(s => s.id.toString() === id.toString() ? { ...s, ...updates } : s));
+    setSavings(prev => prev.map(s => {
+      if (s.id.toString() !== id.toString()) return s;
+      const updated = { ...s, ...updates };
+      if (updated.targetAmount !== undefined && updated.currentAmount !== undefined) {
+        updated.isCompleted = updated.currentAmount >= updated.targetAmount;
+      }
+      return updated;
+    }));
     if (user && isSupabaseConfigured) {
       apiUpdateSaving(id, updates);
     }
