@@ -31,7 +31,8 @@ const AccountTab = ({
   onOpenModal, 
   onTabChange, 
   onDelete,
-  addToast
+  addToast,
+  onTriggerSampleReceipt
 }) => {
   const { updateProfile } = useAuth();
   const [profileName, setProfileName] = useState(user?.user_metadata?.username || '');
@@ -503,6 +504,28 @@ const AccountTab = ({
                           </p>
                           <p style={{ fontSize: '11px', color: '#333', margin: 0 }}>
                             Bagikan struk dari Mandiri, BRImo, SeaBank, DANA, atau ShopeePay ke Shortcut. myWallet langsung terbuka di layar utama dengan nominal, nama toko/merchant, kategori, dan dompet yang terisi otomatis. Anda tinggal tap <strong>"Simpan Transaksi"</strong>!
+                          </p>
+                        </div>
+
+                        {/* Tester Box */}
+                        <div style={{ marginTop: '12px', padding: '12px', background: '#FEF9C3', border: '2px solid #1A1D1E', borderRadius: '8px' }}>
+                          <p style={{ fontSize: '12px', fontWeight: '800', margin: '0 0 6px 0', color: '#1A1D1E' }}>
+                            🧪 Tes Pop-Up Konfirmasi di HP Anda:
+                          </p>
+                          <button
+                            type="button"
+                            onClick={onTriggerSampleReceipt}
+                            className="btn-pressed-blue"
+                            style={{
+                              width: '100%', padding: '10px', background: '#D4F7E6', border: '2px solid #1A1D1E',
+                              borderRadius: '8px', fontWeight: '800', fontSize: '12px', cursor: 'pointer',
+                              boxShadow: '2px 2px 0px #1A1D1E', color: '#1A1D1E', marginBottom: '6px'
+                            }}
+                          >
+                            Buka Simulasi Pop-Up Struk Sekarang
+                          </button>
+                          <p style={{ fontSize: '10px', color: '#555', margin: 0 }}>
+                            Tekan tombol di atas untuk memastikan dialog konfirmasi (Yes / No) berfungsi normal di layar Anda.
                           </p>
                         </div>
                       </div>

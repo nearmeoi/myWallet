@@ -148,6 +148,16 @@ function App() {
     setReceiptConfirmData(null);
   };
 
+  const triggerSampleReceipt = () => {
+    setReceiptConfirmData({
+      title: 'Kopi Kenangan Grand Indonesia',
+      amount: 52000,
+      bank: 'Mandiri',
+      category: 'coffee',
+      walletId: wallets[0]?.id || ''
+    });
+  };
+
   const handleEditReceipt = () => {
     if (!receiptConfirmData) return;
     setModalMode('transaction');
@@ -546,6 +556,7 @@ function App() {
               onTabChange={handleTabChange}
               onDelete={(id) => triggerDelete(id, 'wallet')}
               addToast={addToast}
+              onTriggerSampleReceipt={triggerSampleReceipt}
             />
           )}
         </main>
