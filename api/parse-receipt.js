@@ -37,7 +37,13 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      data: parsed
+      data: parsed,
+      bank: parsed.bank,
+      amount: parsed.amount,
+      formattedAmount: parsed.formattedAmount,
+      title: parsed.title,
+      category: parsed.category,
+      date: parsed.date
     });
   } catch (err) {
     console.error('Parse receipt error:', err);
