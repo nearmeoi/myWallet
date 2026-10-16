@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { User, LogOut, LoaderCircle, Cloud, Tag, ChevronRight, Banknote, CreditCard, Smartphone, Edit3, Trash2, Save, PieChart } from 'lucide-react';
+import { 
+  User, LogOut, LoaderCircle, Cloud, Tag, ChevronRight, Banknote, 
+  CreditCard, Smartphone, Edit3, Trash2, Save, PieChart, Zap, Key, Copy, Check, Info
+} from 'lucide-react';
 import { formatRupiah } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 
@@ -29,7 +32,11 @@ const AccountTab = ({
   onDelete,
   addToast
 }) => {
+  const { updateProfile } = useAuth();
   const [profileName, setProfileName] = useState(user?.user_metadata?.username || '');
+  const [showShortcutInfo, setShowShortcutInfo] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [isGeneratingKey, setIsGeneratingKey] = useState(false);
 
   React.useEffect(() => {
     if (user?.user_metadata?.username) {
@@ -40,6 +47,34 @@ const AccountTab = ({
   const displayName = (user?.user_metadata?.username || profileName || '').trim();
   const [isUpdating, setIsUpdating] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
+
+  const shortcutApiKey = user?.user_metadata?.shortcut_api_key || '';
+
+  const handleGenerateApiKey = async () => {
+    setIsGeneratingKey(true);
+    try {
+      const randomBytes = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      const newKey = `mw_${randomBytes}`;
+
+      const { error } = await updateProfile({ shortcut_api_key: newKey });
+      if (error) throw error;
+      addToast('Kunci API iOS Shortcut berhasil dibuat!', 'success');
+    } catch (err) {
+      addToast('Gagal membuat kunci API: ' + err.message, 'error');
+    } finally {
+      setIsGeneratingKey(false);
+    }
+  };
+
+  const handleCopyKey = () => {
+    if (!shortcutApiKey) return;
+    navigator.clipboard.writeText(shortcutApiKey);
+    setCopiedKey(true);
+    addToast('Kunci API berhasil disalin ke clipboard!', 'success');
+    setTimeout(() => setCopiedKey(false), 2000);
+  };
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -274,6 +309,126 @@ const AccountTab = ({
                       Simpan Profil
                     </button>
                   </form>
+                </div>
+              )}
+            </div>
+          )}
+          {user && (
+            <div style={{ borderBottom: '2px solid #1A1D1E' }}>
+              <div 
+                onClick={() => setShowShortcutInfo(!showShortcutInfo)} 
+                style={{ 
+                  padding: '16px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
+                  background: showShortcutInfo ? '#FEF9C3' : 'transparent',
+                  transition: 'background 0.2s ease'
+                }}
+              >
+                <div style={{ width: '28px', height: '28px', background: '#D4F7E6', border: '2px solid #1A1D1E', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Zap size={16} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: '700', fontSize: '14px', margin: 0, color: '#1A1D1E' }}>Integrasi iOS Shortcut</p>
+                  <p style={{ fontSize: '11px', color: '#666', margin: 0 }}>Catat otomatis struk Mandiri, BRImo, SeaBank, DANA, ShopeePay</p>
+                </div>
+                <ChevronRight 
+                  size={20} 
+                  color="#999" 
+                  style={{ transform: showShortcutInfo ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} 
+                />
+              </div>
+
+              {showShortcutInfo && (
+                <div style={{ padding: '16px', background: '#FAFAFA', borderTop: '2px solid #1A1D1E' }}>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: '800', color: '#666', marginBottom: '6px', display: 'block' }}>
+                      KUNCI API PRIBADI (PERSONAL API KEY)
+                    </label>
+
+                    {shortcutApiKey ? (
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          readOnly
+                          value={shortcutApiKey}
+                          style={{
+                            flex: 1, fontFamily: 'monospace', fontSize: '12px', padding: '10px 12px',
+                            background: '#FFFFFF', border: '2px solid #1A1D1E', borderRadius: '8px'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCopyKey}
+                          className="btn-pressed-blue"
+                          style={{
+                            padding: '10px 14px', background: copiedKey ? '#D4F7E6' : '#FFFFFF',
+                            border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '700',
+                            fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                          }}
+                        >
+                          {copiedKey ? <Check size={14} color="#16A34A" /> : <Copy size={14} />}
+                          <span>{copiedKey ? 'Tersalin' : 'Salin'}</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleGenerateApiKey}
+                        disabled={isGeneratingKey}
+                        className="btn-pressed-blue"
+                        style={{
+                          width: '100%', padding: '12px', background: '#D4F7E6', border: '2px solid #1A1D1E',
+                          borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: isGeneratingKey ? 'not-allowed' : 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                        }}
+                      >
+                        {isGeneratingKey ? <LoaderCircle size={16} className="animate-spin" /> : <Key size={16} />}
+                        <span>Buat Kunci API iOS Shortcut</span>
+                      </button>
+                    )}
+
+                    {shortcutApiKey && (
+                      <div style={{ marginTop: '6px', textAlign: 'right' }}>
+                        <button
+                          type="button"
+                          onClick={handleGenerateApiKey}
+                          disabled={isGeneratingKey}
+                          style={{
+                            background: 'none', border: 'none', color: '#666', fontSize: '11px',
+                            textDecoration: 'underline', cursor: 'pointer'
+                          }}
+                        >
+                          {isGeneratingKey ? 'Membuat...' : 'Buat Ulang Kunci (Regenerate)'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Cara Pakai */}
+                  <div style={{
+                    padding: '12px 14px', background: '#FFFFFF', border: '2px solid #1A1D1E',
+                    borderRadius: '8px', fontSize: '12px', lineHeight: '1.6'
+                  }}>
+                    <p style={{ fontWeight: '800', marginBottom: '8px', color: '#1A1D1E' }}>
+                      Cara Pakai di iPhone (iOS):
+                    </p>
+                    <ol style={{ margin: 0, paddingLeft: '18px', color: '#444' }}>
+                      <li style={{ marginBottom: '6px' }}>
+                        Buka aplikasi <strong>Shortcuts (Pintasan)</strong> di iPhone, buat pintasan baru yang menerima <em>Images / Gambar</em> dari Share Sheet.
+                      </li>
+                      <li style={{ marginBottom: '6px' }}>
+                        Gunakan aksi <strong>"Ekstrak Teks dari Gambar"</strong> lalu kirim ke API myWallet.
+                      </li>
+                      <li>
+                        Saat transfer di <strong>Mandiri, BRImo, SeaBank, DANA, atau ShopeePay</strong>, cukup ketuk <strong>Share (Bagikan)</strong> struk ke Shortcut. Pop-up konfirmasi akan muncul di atas layar untuk langsung disimpan!
+                      </li>
+                    </ol>
+                    <div style={{ marginTop: '10px', padding: '8px 10px', background: '#D4F7E6', borderRadius: '6px', border: '1px solid #1A1D1E', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Info size={16} color="#1A1D1E" />
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#1A1D1E' }}>
+                        Pop-up alert native iOS akan muncul di layar atas. Cukup ketuk "Simpan", transaksi langsung tercatat tanpa perlu membuka web!
+                      </span>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

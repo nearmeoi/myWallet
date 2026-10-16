@@ -8,6 +8,7 @@
 CREATE TABLE IF NOT EXISTS profiles (
   id uuid REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
   monthly_budget bigint DEFAULT 0,
+  shortcut_api_key text UNIQUE,
   updated_at timestamp with time zone DEFAULT timezone('utc'::text, now())
 );
 
