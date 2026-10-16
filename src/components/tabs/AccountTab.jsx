@@ -490,6 +490,11 @@ const AccountTab = ({
                           <li style={{ marginBottom: '6px' }}>
                             Aksi 3: <strong>"Buka URL"</strong><br />
                             <span style={{ color: '#666', fontSize: '11px' }}>URL: <code>{shortcutUrlTemplate}[Teks]</code></span>
+                            <div style={{ marginTop: '4px', padding: '4px 8px', background: '#EFF6FF', borderRadius: '4px', border: '1px solid #BFDBFE' }}>
+                              <span style={{ color: '#1D4ED8', fontSize: '11px', fontWeight: '700' }}>
+                                💡 Penting: Ketuk variabel <b>[Teks]</b> di dalam kolom URL, lalu pilih <b>"Pengodean URL (URL Encoded)"</b> agar teks multi-baris struk tidak terpotong!
+                              </span>
+                            </div>
                           </li>
                         </ol>
                         <div style={{ marginTop: '10px', padding: '10px', background: '#D4F7E6', borderRadius: '6px', border: '1px solid #1A1D1E' }}>

@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { useWallet } from './context/WalletContext';
 import { useDebt } from './context/DebtContext';
 import { useSavings } from './context/SavingsContext';
 import { parseReceiptText } from './lib/receiptParser';
+import { formatRupiah } from './lib/utils';
 import Toast from './components/ui/Toast';
 import ConfirmDialog from './components/ui/ConfirmDialog';
+import ReceiptConfirmModal from './components/modals/ReceiptConfirmModal';
 import PullToRefresh from './components/ui/PullToRefresh';
 import Header from './components/layout/Header';
 import BottomNav from './components/layout/BottomNav';
@@ -130,76 +132,145 @@ function App() {
   };
   const removeToast = (id) => setToasts(prev => prev.filter(t => t.id !== id));
 
-  // Handle incoming receipt from iOS Shortcut (?receipt=... or ?ocr=... or ?text=...)
-  const receiptProcessedRef = useRef(false);
-  useEffect(() => {
-    if (authLoading || receiptProcessedRef.current) return;
+  // Incoming Receipt Confirmation State & Handlers
+  const [receiptConfirmData, setReceiptConfirmData] = useState(null);
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const receiptQuery = urlParams.get('receipt') || urlParams.get('ocr') || urlParams.get('text');
+  const handleConfirmReceipt = () => {
+    if (!receiptConfirmData) return;
+    addTransaction({
+      title: receiptConfirmData.title,
+      amount: receiptConfirmData.amount,
+      type: 'expense',
+      category: receiptConfirmData.category,
+      walletId: receiptConfirmData.walletId || null
+    });
+    addToast(`Transaksi ${formatRupiah(receiptConfirmData.amount)} berhasil dicatat!`, 'success');
+    setReceiptConfirmData(null);
+  };
 
-    if (receiptQuery) {
-      receiptProcessedRef.current = true;
+  const handleEditReceipt = () => {
+    if (!receiptConfirmData) return;
+    setModalMode('transaction');
+    setModalType('expense');
+    setEditingItem({
+      title: receiptConfirmData.title,
+      amount: receiptConfirmData.amount,
+      category: receiptConfirmData.category,
+      walletId: receiptConfirmData.walletId,
+      type: 'expense',
+      _receiptKey: Date.now()
+    });
+    setReceiptConfirmData(null);
+    setShowModal(true);
+  };
 
-      // Clean query parameter from URL without page reload
-      try {
-        const url = new URL(window.location.href);
-        url.searchParams.delete('receipt');
-        url.searchParams.delete('ocr');
-        url.searchParams.delete('text');
-        window.history.replaceState({}, document.title, url.pathname + (url.hash || ''));
-      } catch (e) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
+  const processReceiptUrl = useCallback(() => {
+    if (authLoading) return;
 
-      if (!user) {
-        addToast('Silakan login terlebih dahulu untuk mencatat transaksi struk.', 'info');
-        setActiveTab('account');
-        return;
-      }
+    let receiptRaw = '';
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      receiptRaw = searchParams.get('receipt') || searchParams.get('ocr') || searchParams.get('text');
 
-      const parsed = parseReceiptText(receiptQuery);
-      if (parsed && parsed.success && parsed.amount > 0) {
-        // Find matching wallet by bank name
-        let matchWalletId = wallets.length > 0 ? wallets[0].id : '';
-        if (parsed.bank) {
-          const matched = wallets.find(w => {
-            const wName = (w.name || '').toLowerCase();
-            const bName = (parsed.bank || '').toLowerCase();
-            return wName.includes(bName) || bName.includes(wName);
-          });
-          if (matched) matchWalletId = matched.id;
+      if (!receiptRaw && window.location.hash) {
+        const hashIdx = window.location.hash.indexOf('?');
+        if (hashIdx !== -1) {
+          const hashParams = new URLSearchParams(window.location.hash.substring(hashIdx));
+          receiptRaw = hashParams.get('receipt') || hashParams.get('ocr') || hashParams.get('text');
         }
-
-        // Find matching category
-        let catId = parsed.category || 'other_expense';
-        const catExists = categories.find(c => c.id === catId && c.type === 'expense');
-        if (!catExists) {
-          const defaultExp = categories.find(c => c.type === 'expense');
-          catId = defaultExp ? defaultExp.id : 'other_expense';
-        }
-
-        setModalMode('transaction');
-        setModalType('expense');
-        setEditingItem({
-          title: parsed.title || `Transaksi ${parsed.bank}`,
-          amount: parsed.amount,
-          category: catId,
-          walletId: matchWalletId,
-          type: 'expense',
-          _receiptKey: Date.now()
-        });
-        setShowModal(true);
-        addToast(`Struk ${parsed.bank} terdeteksi! Periksa & simpan.`, 'info');
-      } else {
-        addToast('Teks struk terbaca, tetapi nominal tidak terdeteksi otomatis. Silakan isi form.', 'info');
-        setModalMode('transaction');
-        setModalType('expense');
-        setEditingItem(null);
-        setShowModal(true);
       }
+    } catch (e) {
+      console.warn('Error reading URL params:', e);
     }
-  }, [authLoading, user, wallets, categories]);
+
+    if (!receiptRaw) return;
+
+    // Clean query parameter from URL immediately
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('receipt');
+      url.searchParams.delete('ocr');
+      url.searchParams.delete('text');
+      const cleanHash = url.hash.includes('?') ? url.hash.split('?')[0] : url.hash;
+      window.history.replaceState({}, document.title, url.pathname + (cleanHash || ''));
+    } catch (e) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    if (!user) {
+      addToast('Silakan login terlebih dahulu untuk mencatat transaksi struk.', 'info');
+      setActiveTab('account');
+      return;
+    }
+
+    let receiptText = receiptRaw;
+    try {
+      if (receiptText.includes('%')) {
+        receiptText = decodeURIComponent(receiptText);
+      }
+    } catch (e) {
+      // ignore URI malformed error
+    }
+
+    const parsed = parseReceiptText(receiptText);
+    if (parsed && parsed.success && parsed.amount > 0) {
+      // Find matching wallet by bank name
+      let matchWalletId = wallets.length > 0 ? wallets[0].id : '';
+      if (parsed.bank) {
+        const matched = wallets.find(w => {
+          const wName = (w.name || '').toLowerCase();
+          const bName = (parsed.bank || '').toLowerCase();
+          return wName.includes(bName) || bName.includes(wName);
+        });
+        if (matched) matchWalletId = matched.id;
+      }
+
+      // Find matching category
+      let catId = parsed.category || 'other_expense';
+      const catExists = categories.find(c => c.id === catId && c.type === 'expense');
+      if (!catExists) {
+        const defaultExp = categories.find(c => c.type === 'expense');
+        catId = defaultExp ? defaultExp.id : 'other_expense';
+      }
+
+      // Show confirmation dialog so user can verify before saving!
+      setReceiptConfirmData({
+        title: parsed.title || `Transaksi ${parsed.bank}`,
+        amount: parsed.amount,
+        bank: parsed.bank,
+        category: catId,
+        walletId: matchWalletId
+      });
+    } else {
+      addToast('Teks struk terbaca, tetapi nominal belum terdeteksi. Silakan isi form manual.', 'info');
+      setModalMode('transaction');
+      setModalType('expense');
+      setEditingItem(null);
+      setShowModal(true);
+    }
+  }, [authLoading, user, wallets, categories, addTransaction]);
+
+  useEffect(() => {
+    processReceiptUrl();
+
+    const handleResume = () => {
+      setTimeout(processReceiptUrl, 150);
+    };
+
+    window.addEventListener('visibilitychange', handleResume);
+    window.addEventListener('pageshow', handleResume);
+    window.addEventListener('focus', handleResume);
+    window.addEventListener('popstate', handleResume);
+    window.addEventListener('hashchange', handleResume);
+
+    return () => {
+      window.removeEventListener('visibilitychange', handleResume);
+      window.removeEventListener('pageshow', handleResume);
+      window.removeEventListener('focus', handleResume);
+      window.removeEventListener('popstate', handleResume);
+      window.removeEventListener('hashchange', handleResume);
+    };
+  }, [processReceiptUrl]);
 
   // Auth Handlers
   const handleAuth = async (e) => {
@@ -541,6 +612,19 @@ function App() {
             setConfirmDelete(null);
             if (window.history.state?.modal) window.history.back();
           }}
+        />
+      )}
+
+      {/* Quick Receipt Confirmation Dialog */}
+      {receiptConfirmData && (
+        <ReceiptConfirmModal
+          isOpen={Boolean(receiptConfirmData)}
+          receiptData={receiptConfirmData}
+          wallets={wallets}
+          categories={categories}
+          onConfirm={handleConfirmReceipt}
+          onEdit={handleEditReceipt}
+          onCancel={() => setReceiptConfirmData(null)}
         />
       )}
     </div>
