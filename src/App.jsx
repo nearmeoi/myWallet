@@ -335,6 +335,52 @@ function App() {
     }
   }, [wallets, categories, setAndPersistReceipt]);
 
+  const handleReadClipboard = useCallback(async () => {
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        addToast('Browser tidak mendukung pembacaan clipboard otomatis.', 'info');
+        return;
+      }
+      const text = await navigator.clipboard.readText();
+      if (!text || text.trim().length === 0) {
+        addToast('Papan klip (clipboard) Anda masih kosong.', 'info');
+        return;
+      }
+
+      const parsed = parseReceiptText(text);
+      if (parsed && parsed.success && parsed.amount > 0) {
+        let matchWalletId = wallets.length > 0 ? wallets[0].id : '';
+        if (parsed.bank) {
+          const matched = wallets.find(w => {
+            const wName = (w.name || '').toLowerCase();
+            const bName = (parsed.bank || '').toLowerCase();
+            return wName.includes(bName) || bName.includes(wName);
+          });
+          if (matched) matchWalletId = matched.id;
+        }
+
+        let catId = parsed.category || 'other_expense';
+        const catExists = categories.find(c => c.id === catId && c.type === 'expense');
+        if (!catExists) {
+          const defaultExp = categories.find(c => c.type === 'expense');
+          catId = defaultExp ? defaultExp.id : 'other_expense';
+        }
+
+        setAndPersistReceipt({
+          title: parsed.title || `Transaksi ${parsed.bank}`,
+          amount: parsed.amount,
+          bank: parsed.bank,
+          category: catId,
+          walletId: matchWalletId
+        });
+      } else {
+        addToast('Teks di clipboard tidak terdeteksi sebagai struk transfer.', 'info');
+      }
+    } catch (e) {
+      addToast('Izin akses papan klip belum diaktifkan di browser.', 'info');
+    }
+  }, [wallets, categories, setAndPersistReceipt]);
+
   useEffect(() => {
     processReceiptUrl();
 
@@ -555,6 +601,7 @@ function App() {
         syncing={syncing || isRefreshing} 
         onSettingsClick={() => handleTabChange('account')} 
         onRefresh={handleRefresh}
+        onClipboardClick={handleReadClipboard}
       />
 
       {/* Main Content with Pull-To-Refresh */}
@@ -572,8 +619,6 @@ function App() {
               onRequireAuth={() => handleTabChange('account')}
               onDelete={(id) => triggerDelete(id, 'transaction')}
               onEdit={(item) => openModal(item.category === 'transfer' ? 'transfer' : 'transaction', item.type, item)}
-              onTriggerReceipt={setAndPersistReceipt}
-              addToast={addToast}
             />
           )}
 

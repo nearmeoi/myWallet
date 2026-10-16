@@ -1,7 +1,7 @@
 import React from 'react';
-import { Cloud, LoaderCircle, Settings, RefreshCw } from 'lucide-react';
+import { Cloud, LoaderCircle, Settings, RefreshCw, Clipboard } from 'lucide-react';
 
-const Header = ({ user, syncing, onSettingsClick, onRefresh }) => {
+const Header = ({ user, syncing, onSettingsClick, onRefresh, onClipboardClick }) => {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 11) return 'Pagi';
@@ -17,7 +17,7 @@ const Header = ({ user, syncing, onSettingsClick, onRefresh }) => {
     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <button 
-          onClick={onSettingsClick}
+          onClick={onSettingsClick} 
           className="btn-pressed-blue"
           style={{
             width: '40px', height: '40px', borderRadius: '50%', background: user ? '#D4F7E6' : '#FEF08A',
@@ -40,6 +40,21 @@ const Header = ({ user, syncing, onSettingsClick, onRefresh }) => {
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {onClipboardClick && (
+          <button 
+            onClick={onClipboardClick} 
+            className="btn-pressed-blue"
+            title="Deteksi Struk dari Clipboard"
+            style={{
+              width: '40px', height: '40px', borderRadius: '12px', background: '#FEF08A',
+              border: '2px solid #1A1D1E', boxShadow: '2px 2px 0px #1A1D1E',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#1A1D1E', cursor: 'pointer'
+            }}
+          >
+            <Clipboard size={18} color="#1A1D1E" />
+          </button>
+        )}
         {onRefresh && (
           <button 
             onClick={onRefresh} 
