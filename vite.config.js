@@ -1,6 +1,5 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import handler from './api/send-debt-reminder.js';
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -19,6 +18,7 @@ export default defineConfig(({ mode }) => {
               req.on('data', chunk => { body += chunk; });
               req.on('end', async () => {
                 try {
+                  const { default: handler } = await import('./api/send-debt-reminder.js');
                   req.body = body ? JSON.parse(body) : {};
                   await handler(req, res);
                 } catch (e) {

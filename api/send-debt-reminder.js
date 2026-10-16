@@ -6,6 +6,18 @@ const rateLimitMap = new Map();
 
 function isRateLimited(userId, limit = 5, windowMs = 60000) {
   const now = Date.now();
+  // Lazy cleanup of old entries
+  if (rateLimitMap.size > 100) {
+    for (const [key, timestamps] of rateLimitMap.entries()) {
+      const valid = timestamps.filter(ts => now - ts < windowMs);
+      if (valid.length === 0) {
+        rateLimitMap.delete(key);
+      } else {
+        rateLimitMap.set(key, valid);
+      }
+    }
+  }
+
   const timestamps = rateLimitMap.get(userId) || [];
   const validTimestamps = timestamps.filter(ts => now - ts < windowMs);
 
@@ -17,19 +29,6 @@ function isRateLimited(userId, limit = 5, windowMs = 60000) {
   rateLimitMap.set(userId, validTimestamps);
   return false;
 }
-
-// Clean up old rate limit records periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, timestamps] of rateLimitMap.entries()) {
-    const valid = timestamps.filter(ts => now - ts < 60000);
-    if (valid.length === 0) {
-      rateLimitMap.delete(key);
-    } else {
-      rateLimitMap.set(key, valid);
-    }
-  }
-}, 120000);
 
 // HTML sanitization helper
 function escapeHtml(str) {
