@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { 
   User, LogOut, LoaderCircle, Cloud, Tag, ChevronRight, Banknote, 
-  CreditCard, Smartphone, Edit3, Trash2, Save, PieChart, Zap, Key, Copy, Check, Info
+  CreditCard, Smartphone, Edit3, Trash2, Save, PieChart, Zap, Key, Copy, Check, Info, ExternalLink
 } from 'lucide-react';
 import { formatRupiah } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
+import { IOS_SHORTCUT_URL } from '../../lib/constants';
 
 const AccountTab = ({ 
   user, 
@@ -339,6 +340,25 @@ const AccountTab = ({
 
               {showShortcutInfo && (
                 <div style={{ padding: '16px', background: '#FAFAFA', borderTop: '2px solid #1A1D1E' }}>
+                  {/* Get Shortcut Button */}
+                  <a
+                    href={IOS_SHORTCUT_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-pressed-blue"
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                      width: '100%', padding: '12px 16px', background: '#FEF08A', color: '#1A1D1E',
+                      border: '2px solid #1A1D1E', borderRadius: '10px', fontWeight: '800',
+                      fontSize: '13px', textDecoration: 'none', marginBottom: '16px',
+                      boxShadow: '3px 3px 0px #1A1D1E'
+                    }}
+                  >
+                    <Zap size={18} />
+                    <span>Pasang Shortcut di iPhone (Get Shortcut)</span>
+                    <ExternalLink size={15} />
+                  </a>
+
                   <div style={{ marginBottom: '16px' }}>
                     <label style={{ fontSize: '11px', fontWeight: '800', color: '#666', marginBottom: '6px', display: 'block' }}>
                       KUNCI API PRIBADI (PERSONAL API KEY)
