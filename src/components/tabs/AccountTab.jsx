@@ -44,7 +44,7 @@ const AccountTab = ({
   const [isGeneratingKey, setIsGeneratingKey] = useState(false);
 
   const shortcutUrlTemplate = urlType === 'pwa' 
-    ? `webapp://${window.location.host}/?receipt=` 
+    ? `webapp://${window.location.host}/#receipt=` 
     : `${window.location.origin}/?receipt=`;
 
   const handleCopyUrl = () => {

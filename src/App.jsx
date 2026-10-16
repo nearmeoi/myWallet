@@ -132,8 +132,28 @@ function App() {
   };
   const removeToast = (id) => setToasts(prev => prev.filter(t => t.id !== id));
 
-  // Incoming Receipt Confirmation State & Handlers
-  const [receiptConfirmData, setReceiptConfirmData] = useState(null);
+  // Incoming Receipt Confirmation State & Handlers with localStorage persistence
+  const [receiptConfirmData, setReceiptConfirmData] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mywallet_pending_receipt');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const setAndPersistReceipt = useCallback((data) => {
+    setReceiptConfirmData(data);
+    try {
+      if (data) {
+        localStorage.setItem('mywallet_pending_receipt', JSON.stringify(data));
+      } else {
+        localStorage.removeItem('mywallet_pending_receipt');
+      }
+    } catch (e) {
+      console.warn('Error persisting receipt:', e);
+    }
+  }, []);
 
   const handleConfirmReceipt = () => {
     if (!receiptConfirmData) return;
@@ -145,11 +165,11 @@ function App() {
       walletId: receiptConfirmData.walletId || null
     });
     addToast(`Transaksi ${formatRupiah(receiptConfirmData.amount)} berhasil dicatat!`, 'success');
-    setReceiptConfirmData(null);
+    setAndPersistReceipt(null);
   };
 
   const triggerSampleReceipt = () => {
-    setReceiptConfirmData({
+    setAndPersistReceipt({
       title: 'Kopi Kenangan Grand Indonesia',
       amount: 52000,
       bank: 'Mandiri',
@@ -170,21 +190,31 @@ function App() {
       type: 'expense',
       _receiptKey: Date.now()
     });
-    setReceiptConfirmData(null);
+    setAndPersistReceipt(null);
     setShowModal(true);
   };
 
   const processReceiptUrl = useCallback(() => {
     let receiptRaw = '';
     try {
-      const searchParams = new URLSearchParams(window.location.search);
-      receiptRaw = searchParams.get('receipt') || searchParams.get('ocr') || searchParams.get('text');
+      // 1. Check searchParams (?receipt=... or ?ocr=... or ?text=...)
+      if (window.location.search) {
+        const searchParams = new URLSearchParams(window.location.search);
+        receiptRaw = searchParams.get('receipt') || searchParams.get('ocr') || searchParams.get('text') || '';
+      }
 
+      // 2. Check hash (#receipt=... or #?receipt=... or #/receipt=... or #ocr=... or #text=...)
       if (!receiptRaw && window.location.hash) {
-        const hashIdx = window.location.hash.indexOf('?');
-        if (hashIdx !== -1) {
-          const hashParams = new URLSearchParams(window.location.hash.substring(hashIdx));
-          receiptRaw = hashParams.get('receipt') || hashParams.get('ocr') || hashParams.get('text');
+        const hashStr = window.location.hash.replace(/^#\/?/, '');
+        const queryPart = hashStr.includes('?') ? hashStr.substring(hashStr.indexOf('?') + 1) : hashStr;
+        const hashParams = new URLSearchParams(queryPart);
+        receiptRaw = hashParams.get('receipt') || hashParams.get('ocr') || hashParams.get('text') || '';
+        
+        if (!receiptRaw && hashStr.startsWith('receipt=')) {
+          receiptRaw = hashStr.substring('receipt='.length);
+        } else if (!receiptRaw && hashStr.length > 20 && (hashStr.includes('%') || hashStr.includes('Rp') || hashStr.includes('rp'))) {
+          // Fallback: direct text in hash
+          receiptRaw = hashStr;
         }
       }
     } catch (e) {
@@ -195,21 +225,31 @@ function App() {
 
     let receiptText = receiptRaw;
     try {
-      if (receiptText.includes('%')) {
-        receiptText = decodeURIComponent(receiptText);
+      // Decode percent encoding (handles single and double encoding)
+      let safetyCounter = 0;
+      while (receiptText.includes('%') && safetyCounter < 3) {
+        const decoded = decodeURIComponent(receiptText);
+        if (decoded === receiptText) break;
+        receiptText = decoded;
+        safetyCounter++;
       }
     } catch (e) {
       // ignore URI malformed error
     }
 
-    // Clean query parameter from URL after reading
+    // Clean query parameter and hash from URL after reading
     try {
       const url = new URL(window.location.href);
       url.searchParams.delete('receipt');
       url.searchParams.delete('ocr');
       url.searchParams.delete('text');
-      const cleanHash = url.hash.includes('?') ? url.hash.split('?')[0] : url.hash;
-      window.history.replaceState({}, document.title, url.pathname + (cleanHash || ''));
+      let cleanHash = '';
+      if (url.hash && (url.hash.includes('receipt') || url.hash.includes('ocr') || url.hash.includes('text'))) {
+        cleanHash = '';
+      } else {
+        cleanHash = url.hash;
+      }
+      window.history.replaceState({}, document.title, url.pathname + cleanHash);
     } catch (e) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -236,7 +276,7 @@ function App() {
       }
 
       // Show confirmation dialog so user can verify before saving!
-      setReceiptConfirmData({
+      setAndPersistReceipt({
         title: parsed.title || `Transaksi ${parsed.bank}`,
         amount: parsed.amount,
         bank: parsed.bank,
@@ -250,7 +290,7 @@ function App() {
       setEditingItem(null);
       setShowModal(true);
     }
-  }, [wallets, categories]);
+  }, [wallets, categories, setAndPersistReceipt]);
 
   const checkClipboardReceipt = useCallback(async () => {
     try {
@@ -282,7 +322,7 @@ function App() {
           catId = defaultExp ? defaultExp.id : 'other_expense';
         }
 
-        setReceiptConfirmData({
+        setAndPersistReceipt({
           title: parsed.title || `Transaksi ${parsed.bank}`,
           amount: parsed.amount,
           bank: parsed.bank,
@@ -293,7 +333,7 @@ function App() {
     } catch (e) {
       // Ignore clipboard permission rejection if user didn't grant
     }
-  }, [wallets, categories]);
+  }, [wallets, categories, setAndPersistReceipt]);
 
   useEffect(() => {
     processReceiptUrl();
@@ -487,6 +527,17 @@ function App() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <LoaderCircle size={32} className="animate-spin" />
+        {receiptConfirmData && (
+          <ReceiptConfirmModal
+            isOpen={Boolean(receiptConfirmData)}
+            receiptData={receiptConfirmData}
+            wallets={wallets}
+            categories={categories}
+            onConfirm={handleConfirmReceipt}
+            onEdit={handleEditReceipt}
+            onCancel={() => setAndPersistReceipt(null)}
+          />
+        )}
       </div>
     );
   }
@@ -671,7 +722,7 @@ function App() {
           categories={categories}
           onConfirm={handleConfirmReceipt}
           onEdit={handleEditReceipt}
-          onCancel={() => setReceiptConfirmData(null)}
+          onCancel={() => setAndPersistReceipt(null)}
         />
       )}
     </div>
