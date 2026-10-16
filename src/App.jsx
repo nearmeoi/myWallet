@@ -175,8 +175,6 @@ function App() {
   };
 
   const processReceiptUrl = useCallback(() => {
-    if (authLoading) return;
-
     let receiptRaw = '';
     try {
       const searchParams = new URLSearchParams(window.location.search);
@@ -195,7 +193,16 @@ function App() {
 
     if (!receiptRaw) return;
 
-    // Clean query parameter from URL immediately
+    let receiptText = receiptRaw;
+    try {
+      if (receiptText.includes('%')) {
+        receiptText = decodeURIComponent(receiptText);
+      }
+    } catch (e) {
+      // ignore URI malformed error
+    }
+
+    // Clean query parameter from URL after reading
     try {
       const url = new URL(window.location.href);
       url.searchParams.delete('receipt');
@@ -205,21 +212,6 @@ function App() {
       window.history.replaceState({}, document.title, url.pathname + (cleanHash || ''));
     } catch (e) {
       window.history.replaceState({}, document.title, window.location.pathname);
-    }
-
-    if (!user) {
-      addToast('Silakan login terlebih dahulu untuk mencatat transaksi struk.', 'info');
-      setActiveTab('account');
-      return;
-    }
-
-    let receiptText = receiptRaw;
-    try {
-      if (receiptText.includes('%')) {
-        receiptText = decodeURIComponent(receiptText);
-      }
-    } catch (e) {
-      // ignore URI malformed error
     }
 
     const parsed = parseReceiptText(receiptText);
@@ -252,13 +244,13 @@ function App() {
         walletId: matchWalletId
       });
     } else {
-      addToast('Teks struk terbaca, tetapi nominal belum terdeteksi. Silakan isi form manual.', 'info');
+      addToast('Teks struk terbaca, tetapi nominal belum terdeteksi. Silakan periksa format.', 'info');
       setModalMode('transaction');
       setModalType('expense');
       setEditingItem(null);
       setShowModal(true);
     }
-  }, [authLoading, user, wallets, categories, addTransaction]);
+  }, [wallets, categories]);
 
   useEffect(() => {
     processReceiptUrl();
