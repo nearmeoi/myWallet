@@ -37,15 +37,19 @@ const AccountTab = ({
   const [profileName, setProfileName] = useState(user?.user_metadata?.username || '');
   const [showShortcutInfo, setShowShortcutInfo] = useState(false);
   const [shortcutMode, setShortcutMode] = useState('simple');
+  const [urlType, setUrlType] = useState('pwa'); // 'pwa' | 'safari'
   const [copiedKey, setCopiedKey] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [isGeneratingKey, setIsGeneratingKey] = useState(false);
 
+  const shortcutUrlTemplate = urlType === 'pwa' 
+    ? `webapp://${window.location.host}/?receipt=` 
+    : `${window.location.origin}/?receipt=`;
+
   const handleCopyUrl = () => {
-    const url = `${window.location.origin}/?receipt=`;
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(shortcutUrlTemplate);
     setCopiedUrl(true);
-    addToast('URL Pintasan berhasil disalin!', 'success');
+    addToast(`URL Pintasan (${urlType === 'pwa' ? 'Homescreen' : 'Safari'}) berhasil disalin!`, 'success');
     setTimeout(() => setCopiedUrl(false), 2000);
   };
 
@@ -404,14 +408,43 @@ const AccountTab = ({
                       </a>
 
                       <div style={{ marginBottom: '14px' }}>
-                        <label style={{ fontSize: '11px', fontWeight: '800', color: '#666', marginBottom: '6px', display: 'block' }}>
-                          AWALAN URL UNTUK SHORTCUT
-                        </label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '11px', fontWeight: '800', color: '#666' }}>
+                            TARGET APLIKASI DI IPHONE
+                          </label>
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <button
+                              type="button"
+                              onClick={() => setUrlType('pwa')}
+                              style={{
+                                padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '800',
+                                border: '1.5px solid #1A1D1E',
+                                background: urlType === 'pwa' ? '#1A1D1E' : '#FFFFFF',
+                                color: urlType === 'pwa' ? '#FFFFFF' : '#1A1D1E', cursor: 'pointer'
+                              }}
+                            >
+                              📱 Layar Utama (PWA)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setUrlType('safari')}
+                              style={{
+                                padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '800',
+                                border: '1.5px solid #1A1D1E',
+                                background: urlType === 'safari' ? '#1A1D1E' : '#FFFFFF',
+                                color: urlType === 'safari' ? '#FFFFFF' : '#1A1D1E', cursor: 'pointer'
+                              }}
+                            >
+                              🌐 Safari Web
+                            </button>
+                          </div>
+                        </div>
+
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           <input
                             type="text"
                             readOnly
-                            value={`${window.location.origin}/?receipt=`}
+                            value={shortcutUrlTemplate}
                             style={{
                               flex: 1, fontFamily: 'monospace', fontSize: '11px', padding: '10px 12px',
                               background: '#FFFFFF', border: '2px solid #1A1D1E', borderRadius: '8px'
@@ -431,6 +464,11 @@ const AccountTab = ({
                             <span>{copiedUrl ? 'Tersalin' : 'Salin'}</span>
                           </button>
                         </div>
+                        {urlType === 'pwa' && (
+                          <p style={{ fontSize: '10px', color: '#16A34A', fontWeight: '700', margin: '4px 0 0 2px' }}>
+                            ✓ Menggunakan <code>webapp://</code> agar langsung membuka aplikasi di Layar Utama (Homescreen), bukan Safari biasa!
+                          </p>
+                        )}
                       </div>
 
                       {/* Panduan 2 Langkah */}
@@ -439,7 +477,7 @@ const AccountTab = ({
                         borderRadius: '8px', fontSize: '12px', lineHeight: '1.6'
                       }}>
                         <p style={{ fontWeight: '800', marginBottom: '8px', color: '#1A1D1E' }}>
-                          Hanya butuh 2 aksi di Shortcuts iPhone:
+                          Hanya butuh 2 atau 3 aksi di Shortcuts iPhone:
                         </p>
                         <ol style={{ margin: 0, paddingLeft: '18px', color: '#333' }}>
                           <li style={{ marginBottom: '6px' }}>
@@ -447,8 +485,11 @@ const AccountTab = ({
                             <span style={{ color: '#666', fontSize: '11px' }}>Input: Gambar dari Lembar Berbagi (Share Sheet)</span>
                           </li>
                           <li style={{ marginBottom: '6px' }}>
-                            Aksi 2: <strong>"Buka URL"</strong><br />
-                            <span style={{ color: '#666', fontSize: '11px' }}>URL: <code>{`${window.location.origin}/?receipt=`}[Teks]</code></span>
+                            Aksi 2 (Opsional): <strong>"Tampilkan Pemberitahuan"</strong> (Notifikasi Sukses ✅)
+                          </li>
+                          <li style={{ marginBottom: '6px' }}>
+                            Aksi 3: <strong>"Buka URL"</strong><br />
+                            <span style={{ color: '#666', fontSize: '11px' }}>URL: <code>{shortcutUrlTemplate}[Teks]</code></span>
                           </li>
                         </ol>
                         <div style={{ marginTop: '10px', padding: '10px', background: '#D4F7E6', borderRadius: '6px', border: '1px solid #1A1D1E' }}>
@@ -456,7 +497,7 @@ const AccountTab = ({
                             ✨ Alur Penggunaan:
                           </p>
                           <p style={{ fontSize: '11px', color: '#333', margin: 0 }}>
-                            Bagikan struk dari Mandiri, BRImo, SeaBank, DANA, atau ShopeePay ke Shortcut. myWallet langsung terbuka dengan nominal, nama toko/merchant, kategori, dan dompet yang terisi otomatis. Anda tinggal tap <strong>"Simpan Transaksi"</strong>!
+                            Bagikan struk dari Mandiri, BRImo, SeaBank, DANA, atau ShopeePay ke Shortcut. myWallet langsung terbuka di layar utama dengan nominal, nama toko/merchant, kategori, dan dompet yang terisi otomatis. Anda tinggal tap <strong>"Simpan Transaksi"</strong>!
                           </p>
                         </div>
                       </div>
