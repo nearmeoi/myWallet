@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { 
   ArrowLeft, MoreHorizontal, Banknote, CreditCard, Smartphone, 
-  Target, TrendingUp, TrendingDown, Wallet, AlertCircle
+  Target, TrendingUp, TrendingDown, Wallet, AlertCircle,
+  PieChart, CalendarRange
 } from 'lucide-react';
 import { AVAILABLE_ICONS } from '../../lib/constants';
 import { formatRupiah } from '../../lib/utils';
+import { useWallet } from '../../context/WalletContext';
+import PaydayPlanningView from './PaydayPlanningView';
 
 const WalletTab = ({
   monthlyBudget = 0,
@@ -12,9 +15,20 @@ const WalletTab = ({
   wallets = [],
   categories = [],
   transactions = [],
+  paydayDate,
+  onUpdatePaydayDate,
+  savingsTargetPercent,
+  onUpdateSavingsTargetPercent,
   onOpenModal,
   onBack
 }) => {
+  const walletCtx = useWallet();
+  const currentPaydayDate = paydayDate ?? walletCtx?.paydayDate ?? 25;
+  const currentUpdatePaydayDate = onUpdatePaydayDate ?? walletCtx?.updatePaydayDate;
+  const currentSavingsTargetPercent = savingsTargetPercent ?? walletCtx?.savingsTargetPercent ?? 30;
+  const currentUpdateSavingsTargetPercent = onUpdateSavingsTargetPercent ?? walletCtx?.updateSavingsTargetPercent;
+
+  const [subView, setSubView] = useState('rekap'); // 'rekap' | 'planning'
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
@@ -127,12 +141,84 @@ const WalletTab = ({
         </div>
       )}
 
-      <div>
-        <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0 }}>Ringkasan & Analisis.</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0 }}>
+            {subView === 'planning' ? 'Rencana & Simulasi.' : 'Ringkasan & Analisis.'}
+          </h2>
+        </div>
+
+        {/* ICON-ONLY SWITCHER BUTTONS */}
+        <div style={{
+          display: 'flex',
+          background: '#FFFFFF',
+          border: '2px solid #1A1D1E',
+          borderRadius: '12px',
+          padding: '3px',
+          boxShadow: '2px 2px 0px #1A1D1E',
+          gap: '4px'
+        }}>
+          <button
+            type="button"
+            onClick={() => setSubView('rekap')}
+            title="Rekap Arus Kas & Analisis"
+            className="btn-pressed-blue"
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '8px',
+              border: subView === 'rekap' ? '2px solid #1A1D1E' : '2px solid transparent',
+              background: subView === 'rekap' ? '#D4F7E6' : 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#1A1D1E',
+              boxShadow: subView === 'rekap' ? '1.5px 1.5px 0px #1A1D1E' : 'none'
+            }}
+          >
+            <PieChart size={18} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSubView('planning')}
+            title="Rencana Siklus Gajian & Simulasi Dinamis"
+            className="btn-pressed-blue"
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '8px',
+              border: subView === 'planning' ? '2px solid #1A1D1E' : '2px solid transparent',
+              background: subView === 'planning' ? '#FEF08A' : 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#1A1D1E',
+              boxShadow: subView === 'planning' ? '1.5px 1.5px 0px #1A1D1E' : 'none'
+            }}
+          >
+            <CalendarRange size={18} />
+          </button>
+        </div>
       </div>
 
-      {/* Period Selector Card */}
-      <div className="card" style={{ padding: '14px', margin: 0, background: '#FFFFFF' }}>
+      {subView === 'planning' ? (
+        <PaydayPlanningView
+          wallets={wallets}
+          transactions={transactions}
+          categories={categories}
+          monthlyBudget={monthlyBudget}
+          paydayDate={currentPaydayDate}
+          onUpdatePaydayDate={currentUpdatePaydayDate}
+          savingsTargetPercent={currentSavingsTargetPercent}
+          onUpdateSavingsTargetPercent={currentUpdateSavingsTargetPercent}
+        />
+      ) : (
+        <>
+          {/* Period Selector Card */}
+          <div className="card" style={{ padding: '14px', margin: 0, background: '#FFFFFF' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
           <span style={{ fontSize: '12px', fontWeight: '800' }}>PERIODE LAPORAN:</span>
           <div style={{ display: 'flex', gap: '6px' }}>
@@ -371,6 +457,8 @@ const WalletTab = ({
           </div>
         )}
       </div>
+        </>
+      )}
     </div>
   );
 };

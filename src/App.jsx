@@ -6,6 +6,7 @@ import { useDebt } from './context/DebtContext';
 import { useSavings } from './context/SavingsContext';
 import { parseReceiptText } from './lib/receiptParser';
 import { formatRupiah } from './lib/utils';
+import { DEFAULT_CATEGORIES } from './lib/constants';
 import Toast from './components/ui/Toast';
 import ConfirmDialog from './components/ui/ConfirmDialog';
 import ReceiptConfirmModal from './components/modals/ReceiptConfirmModal';
@@ -35,7 +36,9 @@ function App() {
     transactions, wallets, categories, monthlyBudget, syncing,
     displayBalance, totalExpense, totalIncome, syncToCloud,
     deleteTransaction, deleteWallet, deleteCategory,
-    addTransaction, resetWalletData
+    addTransaction, resetWalletData,
+    paydayDate, updatePaydayDate,
+    savingsTargetPercent, updateSavingsTargetPercent
   } = useWallet();
 
   const { deleteDebt, refreshDebts, resetDebtData } = useDebt();
@@ -166,16 +169,6 @@ function App() {
     });
     addToast(`Transaksi ${formatRupiah(receiptConfirmData.amount)} berhasil dicatat!`, 'success');
     setAndPersistReceipt(null);
-  };
-
-  const triggerSampleReceipt = () => {
-    setAndPersistReceipt({
-      title: 'Kopi Kenangan Grand Indonesia',
-      amount: 52000,
-      bank: 'Mandiri',
-      category: 'coffee',
-      walletId: wallets[0]?.id || ''
-    });
   };
 
   const handleEditReceipt = () => {
@@ -648,6 +641,10 @@ function App() {
               wallets={wallets}
               categories={categories}
               transactions={transactions}
+              paydayDate={paydayDate}
+              onUpdatePaydayDate={updatePaydayDate}
+              savingsTargetPercent={savingsTargetPercent}
+              onUpdateSavingsTargetPercent={updateSavingsTargetPercent}
               onOpenModal={openModal}
               onBack={handleBackFromSubTab}
             />
@@ -690,7 +687,6 @@ function App() {
               onTabChange={handleTabChange}
               onDelete={(id) => triggerDelete(id, 'wallet')}
               addToast={addToast}
-              onTriggerSampleReceipt={triggerSampleReceipt}
             />
           )}
         </main>

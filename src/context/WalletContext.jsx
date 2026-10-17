@@ -73,6 +73,8 @@ export function WalletProvider({ children }) {
     const saved = localStorage.getItem('mywallet_categories');
     return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
   });
+  const [paydayDate, setPaydayDateState] = useState(() => parseInt(localStorage.getItem('mywallet_payday_date') || '25'));
+  const [savingsTargetPercent, setSavingsTargetPercentState] = useState(() => parseInt(localStorage.getItem('mywallet_savings_percent') || '30'));
 
   const [syncing, setSyncing] = useState(false);
 
@@ -435,6 +437,18 @@ export function WalletProvider({ children }) {
     }
   };
 
+  const updatePaydayDate = (newDate) => {
+    const val = Math.max(1, Math.min(31, parseInt(newDate) || 25));
+    setPaydayDateState(val);
+    localStorage.setItem('mywallet_payday_date', val.toString());
+  };
+
+  const updateSavingsTargetPercent = (percent) => {
+    const val = Math.max(5, Math.min(80, parseInt(percent) || 30));
+    setSavingsTargetPercentState(val);
+    localStorage.setItem('mywallet_savings_percent', val.toString());
+  };
+
   const addTransfer = async (transferData) => {
     const { fromWalletId, toWalletId, amount: rawAmount, notes } = transferData;
     const amount = parseFloat(rawAmount || 0);
@@ -635,6 +649,10 @@ export function WalletProvider({ children }) {
     updateWishlistItem,
     deleteWishlistItem,
     updateBudget,
+    paydayDate,
+    updatePaydayDate,
+    savingsTargetPercent,
+    updateSavingsTargetPercent,
     addTransfer,
     updateTransfer,
     findTransferTwin,

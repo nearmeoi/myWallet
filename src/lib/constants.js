@@ -58,7 +58,3 @@ export const DEFAULT_CATEGORIES = [
   { id: 'saving', name: 'Tabungan', icon: 'PiggyBank', bg: '#D4F7E6', type: 'expense', isDefault: true },
   { id: 'other_expense', name: 'Lainnya', icon: 'MoreHorizontal', bg: '#F3F4F6', type: 'expense', isDefault: true }
 ];
-
-// iOS Shortcut iCloud link
-export const IOS_SHORTCUT_URL = 'https://www.icloud.com/shortcuts/662d909afd964aa88c33748e3eb9b9da';
-
