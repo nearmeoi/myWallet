@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  ArrowDownLeft, ArrowUpRight, MoreHorizontal, ArrowLeftRight, 
-  Search, Filter, AlertCircle, PieChart
-} from 'lucide-react';
+import { MoreHorizontal, Search, Filter, AlertCircle } from 'lucide-react';
 import TransactionCard from '../TransactionCard';
+import WalletCardStack from '../ui/WalletCardStack';
 import { AVAILABLE_ICONS } from '../../lib/constants';
-import { formatDate, formatRupiah } from '../../lib/utils';
+import { formatDate } from '../../lib/utils';
 import { useDebt } from '../../context/DebtContext';
 
 const HomeTab = ({ 
@@ -107,87 +105,14 @@ const HomeTab = ({
         </div>
       )}
 
-      {/* TOTAL SALDO CARD */}
-      <section className="card" style={{ background: '#BBEFFA', position: 'relative', overflow: 'hidden' }}>
-        {/* Yellow circle ornament (preserved) */}
-        <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', background: '#FEF08A', borderRadius: '50%', border: '2px solid #1A1D1E', zIndex: 0 }} />
-
-        {/* PieChart Icon Button in Top Right of Card (opens unified summary) */}
-        <button
-          onClick={onOpenSummary}
-          title="Lihat Ringkasan & Grafik"
-          className="btn-pressed-blue"
-          style={{
-            position: 'absolute',
-            top: '14px',
-            right: '14px',
-            zIndex: 2,
-            width: '40px',
-            height: '40px',
-            background: '#FFFFFF',
-            border: '2px solid #1A1D1E',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '2px 2px 0px #1A1D1E',
-            cursor: 'pointer',
-            color: '#1A1D1E'
-          }}
-        >
-          <PieChart size={20} />
-        </button>
-
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <p style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Total Saldo.</p>
-          <h2 style={{ fontSize: '40px', fontWeight: '900', marginBottom: totalOwed > 0 ? '8px' : '24px', lineHeight: '1' }}>
-            {formatRupiah(balance)}
-          </h2>
-
-          {/* Debt Indicator */}
-          {totalOwed > 0 && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              marginBottom: '16px', padding: '6px 10px',
-              background: '#FFC0C0', border: '2px solid #1A1D1E', borderRadius: '8px',
-              width: 'fit-content'
-            }}>
-              <AlertCircle size={14} color="#EF4444" />
-              <span style={{ fontSize: '13px', fontWeight: '800', color: '#EF4444' }}>
-                Hutang: -{formatRupiah(totalOwed)}
-              </span>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button onClick={() => onOpenModal('transaction', 'income')} className="btn-pressed-blue" style={{
-              flex: 1, minWidth: '100px', padding: '12px 10px', background: '#1A1D1E', color: '#fff',
-              border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '700', fontFamily: 'inherit',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px',
-              boxShadow: '3px 3px 0px rgba(0,0,0,0.2)', cursor: 'pointer'
-            }}>
-              <ArrowDownLeft size={16} /> Masuk
-            </button>
-            <button onClick={() => onOpenModal('transaction', 'expense')} className="btn-pressed-blue" style={{
-              flex: 1, minWidth: '100px', padding: '12px 10px', background: '#FFFFFF', color: '#1A1D1E',
-              border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '700', fontFamily: 'inherit',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px',
-              boxShadow: '3px 3px 0px #1A1D1E', cursor: 'pointer'
-            }}>
-              <ArrowUpRight size={16} /> Keluar
-            </button>
-            <button onClick={() => onOpenModal('transfer')} className="btn-pressed-blue" style={{
-              flex: '1 1 100%', padding: '12px 10px', background: '#E0CCF8', color: '#1A1D1E',
-              border: '2px solid #1A1D1E', borderRadius: '8px', fontWeight: '700', fontFamily: 'inherit',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px',
-              boxShadow: '3px 3px 0px #1A1D1E', marginTop: '4px', cursor: 'pointer'
-            }}>
-              <ArrowLeftRight size={16} /> Transfer Antar Dompet
-            </button>
-          </div>
-        </div>
-      </section>
+      {/* TOTAL SALDO & WALLET CARDS STACK */}
+      <WalletCardStack
+        balance={balance}
+        wallets={wallets}
+        totalOwed={totalOwed}
+        onOpenModal={onOpenModal}
+        onOpenSummary={onOpenSummary}
+      />
 
       {/* Search & Filter Bar */}
       <div style={{ marginTop: '24px', display: 'flex', gap: '8px', alignItems: 'center' }}>
