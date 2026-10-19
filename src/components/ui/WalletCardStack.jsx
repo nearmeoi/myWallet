@@ -96,22 +96,6 @@ export default function WalletCardStack({
     }, 320);
   };
 
-  // Handle loop backward (previous card)
-  const triggerPrev = (direction = 'right') => {
-    if (animatingState || cards.length <= 1) return;
-    setAnimatingState({ type: 'prev', direction, phase: 'out' });
-
-    setTimeout(() => {
-      setRawActiveIndex(prev => (prev - 1 + cards.length) % cards.length);
-      setAnimatingState({ type: 'prev', direction, phase: 'in' });
-
-      setTimeout(() => {
-        setAnimatingState(null);
-        setDragOffset(0);
-      }, 300);
-    }, 320);
-  };
-
   const goToIndex = (targetIdx) => {
     if (animatingState || targetIdx === activeIndex || targetIdx >= cards.length) return;
     const direction = targetIdx > activeIndex ? 'left' : 'right';
@@ -172,7 +156,7 @@ export default function WalletCardStack({
     if (dragOffset < -threshold) {
       triggerNext('left');
     } else if (dragOffset > threshold) {
-      triggerPrev('right');
+      triggerNext('right');
     } else {
       setDragOffset(0);
     }
@@ -207,7 +191,7 @@ export default function WalletCardStack({
     if (dragOffset < -threshold) {
       triggerNext('left');
     } else if (dragOffset > threshold) {
-      triggerPrev('right');
+      triggerNext('right');
     } else {
       setDragOffset(0);
     }
@@ -346,17 +330,6 @@ export default function WalletCardStack({
         };
       }
       if (isSecond) {
-        if (animatingState.type === 'prev') {
-          return {
-            transform: 'translate3d(0, -14px, 0) scale(0.96)',
-            zIndex: 9,
-            opacity: 1,
-            transition: `transform 0.3s ${EASE_OUT}, opacity 0.3s ${EASE_IN_OUT}`,
-            transformOrigin: 'top center',
-            willChange: 'transform, opacity',
-            pointerEvents: 'auto'
-          };
-        }
         return {
           transform: 'translate3d(0, -14px, 0) scale(0.96)',
           zIndex: 9,
@@ -379,17 +352,15 @@ export default function WalletCardStack({
         };
       }
       if (isLast) {
-        if (animatingState.type === 'next') {
-          return {
-            transform: cards.length >= 3 ? 'translate3d(0, -28px, 0) scale(0.92)' : 'translate3d(0, -14px, 0) scale(0.96)',
-            zIndex: 4,
-            opacity: 1,
-            transition: `transform 0.32s ${EASE_OUT}, opacity 0.32s ${EASE_IN_OUT}`,
-            transformOrigin: 'top center',
-            willChange: 'transform, opacity',
-            pointerEvents: 'none'
-          };
-        }
+        return {
+          transform: cards.length >= 3 ? 'translate3d(0, -28px, 0) scale(0.92)' : 'translate3d(0, -14px, 0) scale(0.96)',
+          zIndex: 4,
+          opacity: 1,
+          transition: `transform 0.32s ${EASE_OUT}, opacity 0.32s ${EASE_IN_OUT}`,
+          transformOrigin: 'top center',
+          willChange: 'transform, opacity',
+          pointerEvents: 'none'
+        };
       }
       return {
         transform: 'translate3d(0, -28px, 0) scale(0.88)',
@@ -477,9 +448,9 @@ export default function WalletCardStack({
 
             <button
               type="button"
-              onClick={() => triggerPrev('right')}
+              onClick={() => triggerNext('right')}
               className="btn-pressed-blue"
-              title="Dompet Sebelumnya"
+              title="Geser ke Kanan"
               style={{
                 width: '30px',
                 height: '30px',
