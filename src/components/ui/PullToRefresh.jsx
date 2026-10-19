@@ -6,6 +6,7 @@ export default function PullToRefresh({ onRefresh, refreshing, children }) {
   const [isPulling, setIsPulling] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
 
+  const startXRef = useRef(0);
   const startYRef = useRef(0);
   const pullDistRef = useRef(0);
   const isPullingRef = useRef(false);
@@ -15,6 +16,14 @@ export default function PullToRefresh({ onRefresh, refreshing, children }) {
   const handleTouchStart = (e) => {
     // Only allow pull-to-refresh if page is scrolled to top
     if (window.scrollY > 5 || refreshing) return;
+
+    // Ignore touches that originate from elements marked to disable PTR (like card stack)
+    if (e.target && e.target.closest && e.target.closest('[data-no-ptr], [data-card-stack], .no-pull-to-refresh')) {
+      isPullingRef.current = false;
+      return;
+    }
+
+    startXRef.current = e.touches[0].clientX;
     startYRef.current = e.touches[0].clientY;
     isPullingRef.current = true;
     setIsPulling(true);
@@ -32,12 +41,23 @@ export default function PullToRefresh({ onRefresh, refreshing, children }) {
       return;
     }
 
+    const currentX = e.touches[0].clientX;
     const currentY = e.touches[0].clientY;
-    const diff = currentY - startYRef.current;
+    const diffX = Math.abs(currentX - startXRef.current);
+    const diffY = currentY - startYRef.current;
 
-    if (diff > 0) {
+    // If movement is predominantly horizontal, cancel pull-to-refresh immediately
+    if (diffX > 8 && diffX > diffY) {
+      isPullingRef.current = false;
+      setIsPulling(false);
+      setPullDistance(0);
+      pullDistRef.current = 0;
+      return;
+    }
+
+    if (diffY > 0) {
       // Damped pull distance
-      const dist = Math.min(diff * 0.45, 80);
+      const dist = Math.min(diffY * 0.45, 80);
       setPullDistance(dist);
       pullDistRef.current = dist;
     } else {
@@ -47,7 +67,11 @@ export default function PullToRefresh({ onRefresh, refreshing, children }) {
   };
 
   const handleTouchEnd = async () => {
-    if (!isPullingRef.current || refreshing) return;
+    if (!isPullingRef.current || refreshing) {
+      setPullDistance(0);
+      pullDistRef.current = 0;
+      return;
+    }
     isPullingRef.current = false;
     setIsPulling(false);
 

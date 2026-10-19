@@ -118,7 +118,9 @@ export default function WalletCardStack({
   const isMouseDownRef = useRef(false);
 
   const handleTouchStart = (e) => {
+    e.stopPropagation();
     if (animatingState || cards.length <= 1) return;
+    if (e.target.closest('button')) return;
     const touch = e.touches[0];
     dragStartRef.current = { x: touch.clientX, y: touch.clientY };
     isHorizontalDrag.current = null;
@@ -126,14 +128,15 @@ export default function WalletCardStack({
   };
 
   const handleTouchMove = (e) => {
+    e.stopPropagation();
     if (animatingState || cards.length <= 1) return;
     const touch = e.touches[0];
     const deltaX = touch.clientX - dragStartRef.current.x;
     const deltaY = touch.clientY - dragStartRef.current.y;
 
     if (isHorizontalDrag.current === null) {
-      if (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8) {
-        isHorizontalDrag.current = Math.abs(deltaX) > Math.abs(deltaY);
+      if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
+        isHorizontalDrag.current = Math.abs(deltaX) >= Math.abs(deltaY);
       }
     }
 
@@ -144,7 +147,8 @@ export default function WalletCardStack({
     }
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e) => {
+    e.stopPropagation();
     if (animatingState || cards.length <= 1) return;
     if (!isDragging) {
       setDragOffset(0);
@@ -381,7 +385,11 @@ export default function WalletCardStack({
   };
 
   return (
-    <div style={{ marginTop: '4px', marginBottom: '16px' }}>
+    <div 
+      data-card-stack="true"
+      data-no-ptr="true"
+      style={{ marginTop: '4px', marginBottom: '16px' }}
+    >
       {/* Top Deck Status & Navigation Bar */}
       <div style={{
         display: 'flex',
@@ -496,12 +504,15 @@ export default function WalletCardStack({
 
       {/* Stacked Cards Area */}
       <div 
+        data-card-stack="true"
+        data-no-ptr="true"
         style={{
           position: 'relative',
           width: '100%',
           paddingTop: cards.length > 1 ? '24px' : '0px',
           userSelect: 'none',
           touchAction: 'pan-y',
+          overscrollBehavior: 'contain',
           perspective: '1000px'
         }}
         onTouchStart={handleTouchStart}
