@@ -78,58 +78,95 @@ export default function WalletCardStack({
   const activeIndex = rawActiveIndex >= cards.length ? 0 : rawActiveIndex;
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [animatingState, setAnimatingState] = useState(null); // { type: 'next' | 'prev', direction: 'left' | 'right', phase: 'out' | 'in' }
+  const [discardedCards, setDiscardedCards] = useState({}); // { [cardId]: { direction, exitX, key } }
 
   // Handle loop forward (next card, current slides out and goes to back)
-  const triggerNext = (direction = 'left') => {
-    if (animatingState || cards.length <= 1) return;
-    setAnimatingState({ type: 'next', direction, phase: 'out' });
+  // Non-blocking & lightning-fast: cards can be spammed repeatedly without delay!
+  const triggerNext = (direction = 'left', currentExitX = null) => {
+    if (cards.length <= 1) return;
+    const leavingCard = cards[activeIndex];
+    if (!leavingCard) return;
+    const leavingId = leavingCard.id;
+
+    const nextIndex = (activeIndex + 1) % cards.length;
+    const nextCard = cards[nextIndex];
+
+    const exitX = currentExitX !== null ? currentExitX : (direction === 'left' ? -40 : 40);
+
+    setDiscardedCards(prev => {
+      const next = { ...prev };
+      if (nextCard) delete next[nextCard.id];
+      next[leavingId] = {
+        direction,
+        exitX,
+        key: Date.now()
+      };
+      return next;
+    });
+
+    setRawActiveIndex(nextIndex);
+    setDragOffset(0);
+    setIsDragging(false);
 
     setTimeout(() => {
-      setRawActiveIndex(prev => (prev + 1) % cards.length);
-      setAnimatingState({ type: 'next', direction, phase: 'in' });
-
-      setTimeout(() => {
-        setAnimatingState(null);
-        setDragOffset(0);
-      }, 300);
+      setDiscardedCards(prev => {
+        if (!prev[leavingId]) return prev;
+        const copy = { ...prev };
+        delete copy[leavingId];
+        return copy;
+      });
     }, 320);
   };
 
   const goToIndex = (targetIdx) => {
-    if (animatingState || targetIdx === activeIndex || targetIdx >= cards.length) return;
+    if (targetIdx === activeIndex || targetIdx >= cards.length) return;
+    const leavingCard = cards[activeIndex];
     const direction = targetIdx > activeIndex ? 'left' : 'right';
-    setAnimatingState({ type: 'next', direction, phase: 'out' });
-
-    setTimeout(() => {
-      setRawActiveIndex(targetIdx);
-      setAnimatingState({ type: 'next', direction, phase: 'in' });
-
+    if (leavingCard) {
+      const leavingId = leavingCard.id;
+      setDiscardedCards(prev => {
+        const next = { ...prev };
+        const nextCard = cards[targetIdx];
+        if (nextCard) delete next[nextCard.id];
+        next[leavingId] = {
+          direction,
+          exitX: direction === 'left' ? -40 : 40,
+          key: Date.now()
+        };
+        return next;
+      });
       setTimeout(() => {
-        setAnimatingState(null);
-        setDragOffset(0);
-      }, 300);
-    }, 320);
+        setDiscardedCards(prev => {
+          if (!prev[leavingId]) return prev;
+          const copy = { ...prev };
+          delete copy[leavingId];
+          return copy;
+        });
+      }, 320);
+    }
+    setRawActiveIndex(targetIdx);
+    setDragOffset(0);
+    setIsDragging(false);
   };
 
-  // Touch & Pointer Gesture Handling
-  const dragStartRef = useRef({ x: 0, y: 0 });
+  // Touch & Pointer Gesture Handling with Flick Velocity Detection
+  const dragStartRef = useRef({ x: 0, y: 0, time: 0 });
   const isHorizontalDrag = useRef(null);
   const isMouseDownRef = useRef(false);
 
   const handleTouchStart = (e) => {
     e.stopPropagation();
-    if (animatingState || cards.length <= 1) return;
+    if (cards.length <= 1) return;
     if (e.target.closest('button')) return;
     const touch = e.touches[0];
-    dragStartRef.current = { x: touch.clientX, y: touch.clientY };
+    dragStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
     isHorizontalDrag.current = null;
     setIsDragging(false);
   };
 
   const handleTouchMove = (e) => {
     e.stopPropagation();
-    if (animatingState || cards.length <= 1) return;
+    if (cards.length <= 1) return;
     const touch = e.touches[0];
     const deltaX = touch.clientX - dragStartRef.current.x;
     const deltaY = touch.clientY - dragStartRef.current.y;
@@ -149,33 +186,36 @@ export default function WalletCardStack({
 
   const handleTouchEnd = (e) => {
     e.stopPropagation();
-    if (animatingState || cards.length <= 1) return;
+    if (cards.length <= 1) return;
     if (!isDragging) {
       setDragOffset(0);
       return;
     }
 
-    setIsDragging(false);
-    const threshold = 55;
-    if (dragOffset < -threshold) {
-      triggerNext('left');
-    } else if (dragOffset > threshold) {
-      triggerNext('right');
+    const dt = Math.max(Date.now() - dragStartRef.current.time, 1);
+    const velocity = Math.abs(dragOffset) / dt;
+    const isQuickFlick = velocity > 0.35 && Math.abs(dragOffset) > 20;
+    const isDragPassThreshold = Math.abs(dragOffset) > 45;
+
+    if (isQuickFlick || isDragPassThreshold) {
+      const direction = dragOffset < 0 ? 'left' : 'right';
+      triggerNext(direction, dragOffset);
     } else {
+      setIsDragging(false);
       setDragOffset(0);
     }
   };
 
   const handleMouseDown = (e) => {
-    if (animatingState || cards.length <= 1) return;
+    if (cards.length <= 1) return;
     if (e.target.closest('button')) return;
     isMouseDownRef.current = true;
-    dragStartRef.current = { x: e.clientX, y: e.clientY };
+    dragStartRef.current = { x: e.clientX, y: e.clientY, time: Date.now() };
     setIsDragging(false);
   };
 
   const handleMouseMove = (e) => {
-    if (!isMouseDownRef.current || animatingState || cards.length <= 1) return;
+    if (!isMouseDownRef.current || cards.length <= 1) return;
     const deltaX = e.clientX - dragStartRef.current.x;
     if (Math.abs(deltaX) > 5) {
       setIsDragging(true);
@@ -190,13 +230,17 @@ export default function WalletCardStack({
       setDragOffset(0);
       return;
     }
-    setIsDragging(false);
-    const threshold = 55;
-    if (dragOffset < -threshold) {
-      triggerNext('left');
-    } else if (dragOffset > threshold) {
-      triggerNext('right');
+
+    const dt = Math.max(Date.now() - dragStartRef.current.time, 1);
+    const velocity = Math.abs(dragOffset) / dt;
+    const isQuickFlick = velocity > 0.35 && Math.abs(dragOffset) > 20;
+    const isDragPassThreshold = Math.abs(dragOffset) > 45;
+
+    if (isQuickFlick || isDragPassThreshold) {
+      const direction = dragOffset < 0 ? 'left' : 'right';
+      triggerNext(direction, dragOffset);
     } else {
+      setIsDragging(false);
       setDragOffset(0);
     }
   };
@@ -204,179 +248,101 @@ export default function WalletCardStack({
   const activeCard = cards[activeIndex] || cards[0];
 
   // Calculate dynamic transformation for each card in the deck
-  const getCardStyle = (relativePos) => {
+  const getCardStyle = (relativePos, card) => {
     const isFront = relativePos === 0;
     const isSecond = relativePos === 1;
     const isThird = relativePos === 2;
     const isLast = relativePos === cards.length - 1;
+    const discardInfo = discardedCards[card.id];
 
-    // 1. IDLE STATE
-    if (!animatingState) {
-      if (isFront) {
-        return {
-          transform: `translate3d(${dragOffset}px, 0, 0) rotate(${dragOffset * 0.045}deg) scale(1)`,
-          zIndex: 10,
-          opacity: 1,
-          transition: isDragging 
-            ? 'none' 
-            : `transform 0.35s ${EASE_SNAP_BACK}, opacity 0.35s ${EASE_IN_OUT}`,
-          cursor: cards.length > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
-          transformOrigin: 'top center',
-          willChange: 'transform, opacity',
-          pointerEvents: 'auto'
-        };
-      }
-      if (isSecond) {
-        const dragFactor = Math.min(Math.abs(dragOffset) / 200, 1);
-        const translateY = -14 + dragFactor * 14;
-        const scale = 0.96 + dragFactor * 0.04;
-        return {
-          transform: `translate3d(0, ${translateY}px, 0) scale(${scale})`,
-          zIndex: 9,
-          opacity: 1,
-          transition: isDragging ? 'none' : `transform 0.35s ${EASE_OUT}`,
-          transformOrigin: 'top center',
-          willChange: 'transform, opacity',
-          cursor: 'pointer',
-          pointerEvents: 'auto'
-        };
-      }
-      if (isThird) {
-        const dragFactor = Math.min(Math.abs(dragOffset) / 200, 1);
-        const translateY = -28 + dragFactor * 14;
-        const scale = 0.92 + dragFactor * 0.04;
-        return {
-          transform: `translate3d(0, ${translateY}px, 0) scale(${scale})`,
-          zIndex: 8,
-          opacity: 1,
-          transition: isDragging ? 'none' : `transform 0.35s ${EASE_OUT}`,
-          transformOrigin: 'top center',
-          willChange: 'transform, opacity',
-          cursor: 'pointer',
-          pointerEvents: 'auto'
-        };
-      }
+    // If this card is currently flying to the back (discard animation)
+    if (discardInfo && !isFront) {
+      const isLeft = discardInfo.direction === 'left';
       return {
-        transform: 'translate3d(0, -28px, 0) scale(0.88)',
-        zIndex: 5,
-        opacity: 0,
-        transition: `transform 0.35s ${EASE_OUT}, opacity 0.35s ${EASE_IN_OUT}`,
+        animation: `${isLeft ? 'cardFlyBackLeft' : 'cardFlyBackRight'} 0.26s cubic-bezier(0.2, 0.85, 0.3, 1) forwards`,
+        '--from-x': `${discardInfo.exitX}px`,
+        '--back-y': cards.length >= 3 ? '-28px' : '-14px',
+        '--back-scale': cards.length >= 3 ? '0.92' : '0.96',
+        pointerEvents: 'none',
+        transformOrigin: 'top center',
+        willChange: 'transform, opacity'
+      };
+    }
+
+    // 1. FRONT CARD (Active, draggable)
+    if (isFront) {
+      return {
+        transform: `translate3d(${dragOffset}px, 0, 0) rotate(${dragOffset * 0.045}deg) scale(1)`,
+        zIndex: 10,
+        opacity: 1,
+        transition: isDragging 
+          ? 'none' 
+          : `transform 0.22s ${EASE_SNAP_BACK}, opacity 0.2s ${EASE_IN_OUT}`,
+        cursor: cards.length > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+        transformOrigin: 'top center',
+        willChange: 'transform, opacity',
+        pointerEvents: 'auto'
+      };
+    }
+
+    // 2. SECOND CARD (Peek behind)
+    if (isSecond) {
+      const dragFactor = Math.min(Math.abs(dragOffset) / 180, 1);
+      const translateY = -14 + dragFactor * 14;
+      const scale = 0.96 + dragFactor * 0.04;
+      return {
+        transform: `translate3d(0, ${translateY}px, 0) scale(${scale})`,
+        zIndex: 9,
+        opacity: 1,
+        transition: isDragging ? 'none' : `transform 0.22s ${EASE_OUT}`,
+        transformOrigin: 'top center',
+        willChange: 'transform, opacity',
+        cursor: 'pointer',
+        pointerEvents: 'auto'
+      };
+    }
+
+    // 3. THIRD CARD (Peek further behind)
+    if (isThird) {
+      const dragFactor = Math.min(Math.abs(dragOffset) / 180, 1);
+      const translateY = -28 + dragFactor * 14;
+      const scale = 0.92 + dragFactor * 0.04;
+      return {
+        transform: `translate3d(0, ${translateY}px, 0) scale(${scale})`,
+        zIndex: 8,
+        opacity: 1,
+        transition: isDragging ? 'none' : `transform 0.22s ${EASE_OUT}`,
+        transformOrigin: 'top center',
+        willChange: 'transform, opacity',
+        cursor: 'pointer',
+        pointerEvents: 'auto'
+      };
+    }
+
+    // 4. LAST CARD (Waiting at back)
+    if (isLast) {
+      return {
+        transform: cards.length >= 3 ? 'translate3d(0, -28px, 0) scale(0.92)' : 'translate3d(0, -14px, 0) scale(0.96)',
+        zIndex: 4,
+        opacity: cards.length > 2 ? 0.7 : 0,
+        transition: `transform 0.25s ${EASE_OUT}, opacity 0.25s ${EASE_IN_OUT}`,
         pointerEvents: 'none',
         transformOrigin: 'top center'
       };
     }
 
-    // 2. PHASE 1: FLYING OUT (Ease In to depart smoothly)
-    if (animatingState.phase === 'out') {
-      const dir = animatingState.direction === 'left' ? -1 : 1;
-      if (isFront) {
-        return {
-          transform: `translate3d(${dir * 115}%, 0, 0) rotate(${dir * 14}deg)`,
-          zIndex: 10,
-          opacity: 0.7,
-          transition: `transform 0.32s ${EASE_IN_OUT}, opacity 0.32s ${EASE_IN}`,
-          transformOrigin: 'top center',
-          willChange: 'transform, opacity',
-          pointerEvents: 'none'
-        };
-      }
-      if (isSecond) {
-        return {
-          transform: 'translate3d(0, 0, 0) scale(1)',
-          zIndex: 9,
-          opacity: 1,
-          transition: `transform 0.32s ${EASE_IN_OUT}`,
-          transformOrigin: 'top center',
-          willChange: 'transform, opacity',
-          pointerEvents: 'none'
-        };
-      }
-      if (isThird) {
-        return {
-          transform: 'translate3d(0, -14px, 0) scale(0.96)',
-          zIndex: 8,
-          opacity: 1,
-          transition: `transform 0.32s ${EASE_IN_OUT}`,
-          transformOrigin: 'top center',
-          willChange: 'transform, opacity',
-          pointerEvents: 'none'
-        };
-      }
-      if (relativePos === 3) {
-        return {
-          transform: 'translate3d(0, -28px, 0) scale(0.92)',
-          zIndex: 7,
-          opacity: 1,
-          transition: `transform 0.32s ${EASE_IN_OUT}, opacity 0.32s ${EASE_IN_OUT}`,
-          transformOrigin: 'top center',
-          pointerEvents: 'none'
-        };
-      }
-      return {
-        transform: 'translate3d(0, -28px, 0) scale(0.88)',
-        zIndex: 4,
-        opacity: 0,
-        pointerEvents: 'none'
-      };
-    }
-
-    // 3. PHASE 2: SLIDING IN / SETTLING (Ease Out to land smoothly)
-    if (animatingState.phase === 'in') {
-      if (isFront) {
-        return {
-          transform: 'translate3d(0, 0, 0) scale(1)',
-          zIndex: 10,
-          opacity: 1,
-          transition: `transform 0.3s ${EASE_OUT}`,
-          transformOrigin: 'top center',
-          willChange: 'transform, opacity',
-          pointerEvents: 'auto'
-        };
-      }
-      if (isSecond) {
-        return {
-          transform: 'translate3d(0, -14px, 0) scale(0.96)',
-          zIndex: 9,
-          opacity: 1,
-          transition: `transform 0.3s ${EASE_OUT}`,
-          transformOrigin: 'top center',
-          willChange: 'transform, opacity',
-          pointerEvents: 'auto'
-        };
-      }
-      if (isThird) {
-        return {
-          transform: 'translate3d(0, -28px, 0) scale(0.92)',
-          zIndex: 8,
-          opacity: 1,
-          transition: `transform 0.3s ${EASE_OUT}`,
-          transformOrigin: 'top center',
-          willChange: 'transform, opacity',
-          pointerEvents: 'auto'
-        };
-      }
-      if (isLast) {
-        return {
-          transform: cards.length >= 3 ? 'translate3d(0, -28px, 0) scale(0.92)' : 'translate3d(0, -14px, 0) scale(0.96)',
-          zIndex: 4,
-          opacity: 1,
-          transition: `transform 0.32s ${EASE_OUT}, opacity 0.32s ${EASE_IN_OUT}`,
-          transformOrigin: 'top center',
-          willChange: 'transform, opacity',
-          pointerEvents: 'none'
-        };
-      }
-      return {
-        transform: 'translate3d(0, -28px, 0) scale(0.88)',
-        zIndex: 4,
-        opacity: 0,
-        pointerEvents: 'none'
-      };
-    }
+    return {
+      transform: 'translate3d(0, -28px, 0) scale(0.88)',
+      zIndex: 2,
+      opacity: 0,
+      transition: `transform 0.25s ${EASE_OUT}, opacity 0.25s ${EASE_IN_OUT}`,
+      pointerEvents: 'none',
+      transformOrigin: 'top center'
+    };
   };
 
   const handleCardClick = (relativePos) => {
-    if (isDragging || animatingState) return;
+    if (isDragging) return;
     if (relativePos === 1) {
       triggerNext('left');
     } else if (relativePos === 2) {
@@ -390,6 +356,43 @@ export default function WalletCardStack({
       data-no-ptr="true"
       style={{ marginTop: '4px', marginBottom: '16px' }}
     >
+      <style>{`
+        @keyframes cardFlyBackLeft {
+          0% {
+            transform: translate3d(var(--from-x, -60px), 0, 0) rotate(-6deg) scale(0.98);
+            opacity: 0.95;
+            z-index: 12;
+          }
+          35% {
+            transform: translate3d(-105%, 6px, 0) rotate(-9deg) scale(0.91);
+            opacity: 0.85;
+            z-index: 3;
+          }
+          100% {
+            transform: translate3d(0, var(--back-y, -28px), 0) scale(var(--back-scale, 0.92));
+            opacity: 1;
+            z-index: 3;
+          }
+        }
+
+        @keyframes cardFlyBackRight {
+          0% {
+            transform: translate3d(var(--from-x, 60px), 0, 0) rotate(6deg) scale(0.98);
+            opacity: 0.95;
+            z-index: 12;
+          }
+          35% {
+            transform: translate3d(105%, 6px, 0) rotate(9deg) scale(0.91);
+            opacity: 0.85;
+            z-index: 3;
+          }
+          100% {
+            transform: translate3d(0, var(--back-y, -28px), 0) scale(var(--back-scale, 0.92));
+            opacity: 1;
+            z-index: 3;
+          }
+        }
+      `}</style>
       {/* Top Deck Status & Navigation Bar */}
       <div style={{
         display: 'flex',
@@ -554,7 +557,7 @@ export default function WalletCardStack({
         {/* Stacked Cards Deck */}
         {cards.map((card, index) => {
           const relativePos = (index - activeIndex + cards.length) % cards.length;
-          const cardStyle = getCardStyle(relativePos);
+          const cardStyle = getCardStyle(relativePos, card);
 
           return (
             <section
